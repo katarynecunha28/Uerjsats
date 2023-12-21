@@ -75,5 +75,5 @@ def detectar_raios(gif_path):
 
 
 if __name__ == "__main__":
-    gif_path = r"C:\Users\Digicare Raio x\Documents\cv\cena1.gif"  # Adicionei uma aspa ao final do caminho do arquivo GIF
+    gif_path = r"C:\Users\katar\OneDrive\Documentos\UERJ\UERJ SATS\cubedesign\5XK0pnt.gif"  # Localização do gif
     detectar_raios(gif_path)
