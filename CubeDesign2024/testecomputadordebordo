@@ -1,0 +1,95 @@
+#include <SoftwareSerial.h>
+#define ARDUINO_GPS_RX 38// GPS TX, Arduino RX pin
+#define ARDUINO_GPS_TX 36 // GPS RX, Arduino TX pin
+SoftwareSerial ssGPS(ARDUINO_GPS_TX, ARDUINO_GPS_RX); // Create a SoftwareSerial
+
+// Set gpsPort to either ssGPS if using SoftwareSerial or Serial1 if using an
+// Arduino with a dedicated hardware serial port
+#define gpsPort ssGPS  // Alternatively, use Serial1 on the Leonardo
+
+// Define the serial monitor port. On the Uno, and Leonardo this is 'Serial'
+//  on other boards this may be 'SerialUSB'
+#define SerialMonitor Serial
+
+#include <Adafruit_BMP280.h>
+
+//BMP 280 pins
+#define BMP_SDA 21
+#define BMP_SCL 22
+
+Adafruit_BMP280 bmp;
+
+void setup() {
+  SerialMonitor.begin(9600);
+  gpsPort.begin(GPS_BAUD);
+
+  //Initialize BMP280 sensor 
+  if (!bmp.begin (0x76)) {
+    Serial.println("Failed to find BMP280");}
+
+  }
+}
+
+void loop(){
+  // Medidas BMP280
+  float pressao = bmp.readPressure()/100;
+  float altitude = bmp.readAltitude(1013.25);
+
+  Serial.println(" Pressão: " + String(pressao) + " Altitude: " + String(altitude));
+  printGPSInfo();
+}
+
+void printGPSInfo()
+{
+  // Print latitude, longitude, altitude in feet, course, speed, date, time,
+  // and the number of visible satellites.
+  SerialMonitor.println("GPS: ");
+  SerialMonitor.print("Latitude: "); SerialMonitor.print(tinyGPS.location.lat(), 6);
+  SerialMonitor.print(" Longitude: "); SerialMonitor.print(tinyGPS.location.lng(), 6);
+  SerialMonitor.print(" Altitude: "); SerialMonitor.print(tinyGPS.altitude.meters());
+  SerialMonitor.print(" Course: "); SerialMonitor.print(tinyGPS.course.deg());
+  SerialMonitor.print(" Speed: "); SerialMonitor.print(tinyGPS.speed.mps());
+  SerialMonitor.print(" Date: "); printDate();
+  SerialMonitor.print(" Time: "); printTime();
+  SerialMonitor.print(" Sats: "); SerialMonitor.println(tinyGPS.satellites.value());
+  SerialMonitor.println("==================================");
+}
+
+// This custom version of delay() ensures that the tinyGPS object
+// is being "fed". From the TinyGPS++ examples.
+static void smartDelay(unsigned long ms)
+{
+  unsigned long start = millis();
+  do
+  {
+    // If data has come in from the GPS module
+    while (gpsPort.available())
+      tinyGPS.encode(gpsPort.read()); // Send it to the encode function
+    // tinyGPS.encode(char) continues to "load" the tinGPS object with new
+    // data coming in from the GPS module. As full NMEA strings begin to come in
+    // the tinyGPS library will be able to start parsing them for pertinent info
+  } while (millis() - start < ms);
+}
+
+// printDate() formats the date into dd/mm/yy.
+void printDate()
+{
+  SerialMonitor.print(tinyGPS.date.day());
+  SerialMonitor.print("/");
+  SerialMonitor.print(tinyGPS.date.month());
+  SerialMonitor.print("/");
+  SerialMonitor.print(tinyGPS.date.year());
+}
+
+// printTime() formats the time into "hh:mm:ss", and prints leading 0's
+// where they're called for.
+void printTime()
+{
+  SerialMonitor.print(tinyGPS.time.hour());
+  SerialMonitor.print(":");
+  if (tinyGPS.time.minute() < 10) SerialMonitor.print('0');
+  SerialMonitor.print(tinyGPS.time.minute());
+  SerialMonitor.print(":");
+  if (tinyGPS.time.second() < 10) SerialMonitor.print('0');
+  SerialMonitor.print(tinyGPS.time.second());
+}
