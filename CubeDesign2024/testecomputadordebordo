@@ -1,8 +1,10 @@
+// Bibliotecas
 #include <SoftwareSerial.h>
 #include <TinyGPS++.h>
 #include <Wire.h>
 #include <Adafruit_BMP280.h>
 
+//Definir GPS
 #define ARDUINO_GPS_RX 38
 #define ARDUINO_GPS_TX 36
 #define GPS_BAUD 9600
@@ -11,6 +13,8 @@ SoftwareSerial ssGPS(ARDUINO_GPS_TX, ARDUINO_GPS_RX);
 TinyGPSPlus tinyGPS;
 
 #define SerialMonitor Serial
+
+//Definir BMP 
 
 #define BMP_SDA 21
 #define BMP_SCL 22
@@ -36,6 +40,7 @@ void loop() {
   SerialMonitor.println(altitude);
 
   printGPSInfo();
+  delay(1500);
 }
 
 void printGPSInfo() {
