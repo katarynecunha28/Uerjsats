@@ -43,6 +43,8 @@ void loop() {
   delay(1500);
 }
 
+// Funcao pra printar as informacoes do GPS
+
 void printGPSInfo() {
   SerialMonitor.println("GPS: ");
   SerialMonitor.print("Latitude: ");
@@ -72,6 +74,8 @@ static void smartDelay(unsigned long ms) {
   } while (millis() - start < ms);
 }
 
+// Funcao pra printar data
+
 void printDate() {
   SerialMonitor.print(tinyGPS.date.day());
   SerialMonitor.print("/");
@@ -79,6 +83,8 @@ void printDate() {
   SerialMonitor.print("/");
   SerialMonitor.print(tinyGPS.date.year());
 }
+
+//Funcao pra printar hora
 
 void printTime() {
   SerialMonitor.print(tinyGPS.time.hour());
