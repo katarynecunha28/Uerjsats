@@ -33,11 +33,14 @@ void setup() {
 void loop() {
   float pressao = bmp.readPressure() / 100.0;
   float altitude = bmp.readAltitude(1013.25);
+  float temperatura = bmp.readTemperature();
 
   SerialMonitor.print("Pressão: ");
   SerialMonitor.print(pressao);
   SerialMonitor.print(" Altitude: ");
   SerialMonitor.println(altitude);
+  SerialMonitor.print("Temperatura: ");  // Nova linha para imprimir a temperatura
+  SerialMonitor.println(temperatura);
 
   printGPSInfo();
   delay(1500);
