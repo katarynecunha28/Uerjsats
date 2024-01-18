@@ -9,32 +9,42 @@
 #define ARDUINO_GPS_TX 36
 #define GPS_BAUD 9600
 
+// Inicializar objeto SoftwareSerial para comunicação com o GPS
 SoftwareSerial ssGPS(ARDUINO_GPS_TX, ARDUINO_GPS_RX);
+
+// Inicializar objeto TinyGPS para processamento de dados GPS
 TinyGPSPlus tinyGPS;
 
 #define SerialMonitor Serial
 
 //Definir BMP 
-
 #define BMP_SDA 21
 #define BMP_SCL 22
 
+// Inicializar objeto Adafruit_BMP280 para comunicação com o sensor BMP280
 Adafruit_BMP280 bmp;
 
 void setup() {
+// Iniciar comunicação serial para monitoramento
   SerialMonitor.begin(9600);
+
+ // Iniciar comunicação serial para o GPS
   ssGPS.begin(GPS_BAUD);
 
+// Iniciar comunicação com o sensor BMP280
   if (!bmp.begin(0x76)) {
     SerialMonitor.println("Failed to find BMP280");
   }
 }
 
 void loop() {
+
+// Ler pressão, altitude e temperatura do sensor BMP280
   float pressao = bmp.readPressure() / 100.0;
   float altitude = bmp.readAltitude(1013.25);
   float temperatura = bmp.readTemperature();
 
+// Imprimir pressão, altitude e temperatura
   SerialMonitor.print("Pressão: ");
   SerialMonitor.print(pressao);
   SerialMonitor.print(" Altitude: ");
@@ -42,12 +52,14 @@ void loop() {
   SerialMonitor.print("Temperatura: ");  // Nova linha para imprimir a temperatura
   SerialMonitor.println(temperatura);
 
+// Chamar função para imprimir informações do GPS
   printGPSInfo();
+
+// Aguardar 1500 milissegundos (1,5 segundos)
   delay(1500);
 }
 
 // Funcao pra printar as informacoes do GPS
-
 void printGPSInfo() {
   SerialMonitor.println("GPS: ");
   SerialMonitor.print("Latitude: ");
@@ -69,6 +81,7 @@ void printGPSInfo() {
   SerialMonitor.println("==================================");
 }
 
+// Função para aguardar e processar dados do GPS
 static void smartDelay(unsigned long ms) {
   unsigned long start = millis();
   do {
@@ -77,7 +90,7 @@ static void smartDelay(unsigned long ms) {
   } while (millis() - start < ms);
 }
 
-// Funcao pra printar data
+// Funcao pra printar a data
 
 void printDate() {
   SerialMonitor.print(tinyGPS.date.day());
@@ -87,7 +100,7 @@ void printDate() {
   SerialMonitor.print(tinyGPS.date.year());
 }
 
-//Funcao pra printar hora
+//Funcao pra printar a hora
 
 void printTime() {
   SerialMonitor.print(tinyGPS.time.hour());
