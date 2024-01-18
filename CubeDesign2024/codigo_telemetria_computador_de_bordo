@@ -1,0 +1,219 @@
+#include <Wire.h>
+#include <Adafruit_BMP280.h>
+#include <SoftwareSerial.h>
+#include <TinyGPS++.h>
+#include <EEPROM.h>
+#include <LoRa.h>
+#include <Adafruit_GFX.h>
+#include <Adafruit_SSD1306.h>
+
+#define ARDUINO_GPS_RX 38
+#define ARDUINO_GPS_TX 36
+#define GPS_BAUD 9600
+
+SoftwareSerial ssGPS(ARDUINO_GPS_TX, ARDUINO_GPS_RX);
+TinyGPSPlus tinyGPS;
+
+#define SerialMonitor Serial
+
+#define BMP_SDA 21
+#define BMP_SCL 22
+
+Adafruit_BMP280 bmp;
+
+float pressaoPadrao = 1013.25; // Pressão padrão ao nível do mar
+float offsetPressao = 0.0;    // Offset inicial da pressão
+float offsetAltitude = 0.0;   // Offset inicial da altitude
+int enderecoPressaoEEPROM = 0; // Endereço na emulação de EEPROM para armazenar o offsetPressao
+int enderecoAltitudeEEPROM = sizeof(float); // Endereço na emulação de EEPROM para armazenar o offsetAltitude
+int meuEndereco = 42; // Endereço do receptor
+int enderecoTransmissorEEPROM = enderecoAltitudeEEPROM + sizeof(float); // Endereço na emulação de EEPROM para armazenar o endereço do transmissor
+
+// Configuração LoRa
+#define LORA_SCK 5
+#define LORA_MISO 19
+#define LORA_MOSI 27
+#define LORA_CS 18
+#define LORA_RST 14
+#define LORA_IRQ 26
+
+// Configuração do display OLED
+#define OLED_SDA 4
+#define OLED_SCL 15
+#define OLED_RST 16
+#define SCREEN_WIDTH 128
+#define SCREEN_HEIGHT 64
+Adafruit_SSD1306 display(SCREEN_WIDTH, SCREEN_HEIGHT, &Wire, OLED_RST);
+
+void setup() {
+  SerialMonitor.begin(9600);
+  ssGPS.begin(GPS_BAUD);
+
+  if (!bmp.begin(0x76)) {
+    SerialMonitor.println("Failed to find BMP280");
+  }
+
+  // Inicializa a emulação da EEPROM com tamanho suficiente para armazenar os offsets e endereço
+  EEPROM.begin(sizeof(float) * 2 + sizeof(int));
+
+  // Inicializa a comunicação LoRa
+  LoRa.begin(915E6);
+  LoRa.setPins(LORA_CS, LORA_RST, LORA_IRQ);
+
+  // Recupera os offsets e endereço da emulação de EEPROM
+  EEPROM.get(enderecoPressaoEEPROM, offsetPressao);
+  EEPROM.get(enderecoAltitudeEEPROM, offsetAltitude);
+  EEPROM.get(enderecoTransmissorEEPROM, meuEndereco);
+
+  // Inicializa o display OLED
+  if(!display.begin(SSD1306_SWITCHCAPVCC, 0x3c, false, false)) {
+    SerialMonitor.println(F("SSD1306 allocation failed"));
+    for(;;);
+  }
+
+  display.clearDisplay();
+  display.setTextColor(WHITE);
+  display.setTextSize(1);
+  display.setCursor(0, 0);
+  display.print("LoRa RECEIVER ");
+  display.display();
+
+  // Realiza a calibração se os valores recuperados forem 0.0 (não calibrados)
+  if (offsetPressao == 0.0 || offsetAltitude == 0.0) {
+    calibrarSensores();
+  }
+}
+
+void loop() {
+  float pressao = bmp.readPressure() / 100.0 - offsetPressao; // Ajusta a leitura com o offset
+  float altitude = bmp.readAltitude(pressaoPadrao) - offsetAltitude; // Ajusta a leitura com o offset
+  float temperatura = bmp.readTemperature(); // Leitura da temperatura do BMP280
+
+  SerialMonitor.print("Pressão: ");
+  SerialMonitor.print(pressao);
+  SerialMonitor.print(" Altitude: ");
+  SerialMonitor.print(altitude);
+  SerialMonitor.print(" Temperatura: ");
+  SerialMonitor.println(temperatura);
+
+  // Envia os dados via LoRa
+  sendLoRaData(pressao, altitude, temperatura);
+
+  // Exibe as informações no display OLED
+  display.clearDisplay();
+  display.setCursor(0, 0);
+  display.print("Pressao: ");
+  display.print(pressao);
+  display.setCursor(0, 10);
+  display.print("Altitude: ");
+  display.print(altitude);
+  display.setCursor(0, 20);
+  display.print("Temperatura: ");
+  display.print(temperatura);
+  display.display();
+
+  printGPSInfo();
+}
+
+void sendLoRaData(float pressao, float altitude, float temperatura) {
+  // Construa a string com os dados que você deseja enviar
+  String dataToSend = String(pressao) + "," + String(altitude) + "," + String(temperatura);
+
+  // Converte a string para um array de caracteres
+  char charArray[dataToSend.length() + 1];
+  dataToSend.toCharArray(charArray, sizeof(charArray));
+
+  // Envia os dados via LoRa
+  LoRa.beginPacket();
+  LoRa.write(meuEndereco); // Envia o endereço do receptor
+
+  // Envia cada caractere individualmente
+  for (int i = 0; i < dataToSend.length(); i++) {
+    LoRa.write(charArray[i]);
+  }
+
+  LoRa.endPacket();
+}
+
+void calibrarSensores() {
+  SerialMonitor.println("Calibração automática iniciada:");
+
+  const int numLeituras = 10;
+  float somaPressao = 0.0;
+  float somaAltitude = 0.0;
+
+  for (int i = 0; i < numLeituras; ++i) {
+    delay(500); // Aguarda meio segundo entre leituras
+    float pressaoAtual = bmp.readPressure() / 100.0;
+    float altitudeAtual = bmp.readAltitude(pressaoPadrao);
+    somaPressao += pressaoAtual;
+    somaAltitude += altitudeAtual;
+  }
+
+  // Calcula a média das leituras
+  float mediaPressao = somaPressao / numLeituras;
+  float mediaAltitude = somaAltitude / numLeituras;
+
+  // Calcula os offsets
+  offsetPressao = mediaPressao - pressaoPadrao;
+  offsetAltitude = mediaAltitude;
+
+  // Salva os offsets e endereço do receptor na emulação de EEPROM
+  EEPROM.put(enderecoPressaoEEPROM, offsetPressao);
+  EEPROM.put(enderecoAltitudeEEPROM, offsetAltitude);
+  EEPROM.put(enderecoTransmissorEEPROM, meuEndereco);
+
+  SerialMonitor.println("Calibração automática concluída.");
+  SerialMonitor.println("OffsetPressao ajustado para: " + String(offsetPressao));
+  SerialMonitor.println("OffsetAltitude ajustado para: " + String(offsetAltitude));
+}
+
+void printGPSInfo() {
+  SerialMonitor.println("GPS: ");
+  SerialMonitor.print("Latitude: ");
+  SerialMonitor.print(tinyGPS.location.lat(), 6);
+  SerialMonitor.print(" Longitude: ");
+  SerialMonitor.print(tinyGPS.location.lng(), 6);
+  SerialMonitor.print(" Altitude: ");
+  SerialMonitor.print(tinyGPS.altitude.meters());
+  SerialMonitor.print(" Course: ");
+  SerialMonitor.print(tinyGPS.course.deg());
+  SerialMonitor.print(" Speed: ");
+  SerialMonitor.print(tinyGPS.speed.mps());
+  SerialMonitor.print(" Date: ");
+  printDate();
+  SerialMonitor.print(" Time: ");
+  printTime();
+  SerialMonitor.print(" Sats: ");
+  SerialMonitor.println(tinyGPS.satellites.value());
+  SerialMonitor.println("==================================");
+  delay(1500);
+}
+
+static void smartDelay(unsigned long ms) {
+  unsigned long start = millis();
+  do {
+    while (ssGPS.available())
+      tinyGPS.encode(ssGPS.read());
+  } while (millis() - start < ms);
+}
+
+void printDate() {
+  SerialMonitor.print(tinyGPS.date.day());
+  SerialMonitor.print("/");
+  SerialMonitor.print(tinyGPS.date.month());
+  SerialMonitor.print("/");
+  SerialMonitor.print(tinyGPS.date.year());
+}
+
+void printTime() {
+  SerialMonitor.print(tinyGPS.time.hour());
+  SerialMonitor.print(":");
+  if (tinyGPS.time.minute() < 10)
+    SerialMonitor.print('0');
+  SerialMonitor.print(tinyGPS.time.minute());
+  SerialMonitor.print(":");
+  if (tinyGPS.time.second() < 10)
+    SerialMonitor.print('0');
+  SerialMonitor.print(tinyGPS.time.second());
+}
