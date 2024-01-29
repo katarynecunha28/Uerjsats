@@ -1,0 +1,21 @@
+#include <SoftwareSerial.h>
+
+SoftwareSerial Esp32_Serial(25,26); //RX, TX
+//Global Variable
+char c;
+String dataIn;
+
+void setup() {
+  Serial.begin(9600);  // Inicializa a comunicação serial com taxa de 9600 bps
+  Esp32_Serial.begin(9600); // Inicializa a comunicação serial com o mesmo baud rate nos pinos 25 (RX) e 26 (TX)
+}
+
+
+void loop() {
+  if (Esp32_Serial.available() > 0) {  // Use Serial2 para a porta serial no ESP32
+    String mensagem = Esp32_Serial.readStringUntil('\n');  // Lê a mensagem até encontrar uma quebra de linha
+    Serial.print("ESP32 recebeu: ");
+    Serial.println(mensagem);
+  }
+}
+
