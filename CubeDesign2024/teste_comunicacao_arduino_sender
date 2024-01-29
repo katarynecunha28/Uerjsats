@@ -1,0 +1,17 @@
+#include <SoftwareSerial.h>
+
+SoftwareSerial ArduinoUno_softSerial(10, 11); // RX, TX
+
+// Global Variable
+char c;
+String dataIn;
+
+void setup() {
+  Serial.begin(19200);
+  ArduinoUno_softSerial.begin(9600);
+}
+
+void loop() {
+  ArduinoUno_softSerial.print("Teste comunicacao cubedesign\n"); // Adiciona a quebra de linha ('\n')
+  delay(1000);  // Adicione um pequeno delay
+}
