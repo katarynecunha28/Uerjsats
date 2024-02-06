@@ -1,0 +1,19 @@
+void setup() {
+  Serial.begin(9600);
+}
+
+void loop() {
+  receberDadosDoMaster(2);  // Escuta mensagens destinadas ao Slave Uno
+}
+
+void receberDadosDoMaster(int endereco) {
+  if (Serial.available() > 0) {
+    String dadosRecebidos = Serial.readStringUntil('\n');
+    int enderecoRecebido = dadosRecebidos.substring(0, 1).toInt();
+    
+    if (enderecoRecebido == endereco) {
+      String dados = dadosRecebidos.substring(2);
+      Serial.println("Dados recebidos do Master: " + dados);
+    }
+  }
+}
