@@ -1,0 +1,22 @@
+void setup() {
+  Serial.begin(9600);  // Serial para debug
+  Serial1.begin(9600); // Serial do MKR Wan 1300
+}
+
+void loop() {
+  enviarDadosParaSlave("Dados para Slave WiFi", 1);  // Envia para o Slave WiFi (MKR WiFi 1010)
+  delay(1000);
+  
+  enviarDadosParaSlave("Dados para Slave Uno", 2);   // Envia para o Slave Uno (Arduino Uno)
+  delay(1000);
+}
+
+void enviarDadosParaSlave(String dados, int endereco) {
+  Serial1.print(endereco);  // Identificador de destino
+  Serial1.print(":");
+  Serial1.println(dados);
+
+  Serial.print(endereco);  // Printar no monitor serial
+  Serial.print(":");
+  Serial.println(dados);
+}
