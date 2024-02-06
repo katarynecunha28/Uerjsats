@@ -1,0 +1,48 @@
+#include <Wire.h>
+#include <Adafruit_INA219.h>
+
+Adafruit_INA219 ina219;
+
+const int LM35_PIN = A0;
+
+void setup() {
+  Serial.begin(9600);
+  while (!Serial) {
+    delay(10);
+  }
+
+  // Inicializa o sensor INA219
+  if (!ina219.begin()) {
+    Serial.println("Erro ao encontrar o INA219! Verifique a conexão.");
+    while (1);
+  }
+  Serial.println("INA219 inicializado!");
+
+  // Configuração do sensor INA219 (opcional)
+  ina219.setCalibration_32V_1A();
+
+  // Define LM35_PIN como entrada
+  pinMode(LM35_PIN, INPUT);
+}
+
+void loop() {
+  // Leitura da temperatura com LM35
+  int raw = analogRead(LM35_PIN);
+  float millivolts = (raw / 1024.0) * 5000; // Convertendo a leitura para milivolts
+  float celsius = millivolts / 10; // Converte para graus Celsius
+
+  // Leitura da corrente com INA219
+  float shuntvoltage = ina219.getShuntVoltage_mV();
+  float busvoltage = ina219.getBusVoltage_V();
+  float current_mA = ina219.getCurrent_mA();
+
+  // Exibição das leituras
+  Serial.print("Temperatura (C): ");
+  Serial.println(celsius);
+  Serial.print("Corrente (mA): ");
+  Serial.println(current_mA);
+  Serial.print("Tensão (V): ");
+  Serial.println(busvoltage);
+
+  delay(1000); // Aguarda 1 segundo antes da próxima leitura
+}
