@@ -1,0 +1,21 @@
+void setup() {
+  Serial.begin(9600);
+  Serial.begin1(9600);
+}
+
+void loop() {
+  receberDadosDoMaster(1);  // Escuta mensagens destinadas ao Slave WiFi
+}
+
+void receberDadosDoMaster(int endereco) {
+  if (Serial1.available() > 0) {
+    String dadosRecebidos = Serial1.readStringUntil('\n');
+    int enderecoRecebido = dadosRecebidos.substring(0, 1).toInt();
+    
+    if (enderecoRecebido == endereco) {
+      String dados = dadosRecebidos.substring(2);
+      Serial1.println("Dados recebidos do Master: " + dados);
+      Serial.println("Dados recebidos do Master: " + dados);
+    }
+  }
+}
