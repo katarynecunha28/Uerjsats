@@ -1,10 +1,34 @@
+#include "DHT.h"
+
+#define DHTPIN  A2   // Pino ao qual o sensor DHT22 está conectado
+#define DHTTYPE DHT22   // Tipo do sensor DHT (DHT22)
+
+DHT dht(DHTPIN, DHTTYPE);
+
 void setup() {
   Serial.begin(9600);
   Serial1.begin(9600);
+  dht.begin();
 }
 
 void loop() {
   receberDadosDoMaster(1);  // Escuta mensagens destinadas ao Slave WiFi
+  delay(1000);
+  
+  float temperatura = dht.readTemperature();
+  String temperaturaStr = String(temperatura); // Converte a temperatura para uma string
+  enviarDadosParaMaster(temperaturaStr.c_str(), 3);  // Envia para o Slave WiFi (MKR WiFi 1010)
+  delay(1000);
+}
+
+void enviarDadosParaMaster(String dados, int endereco) {
+  Serial1.print(endereco);  // Identificador de destino
+  Serial1.print(": Temperatura:");
+  Serial1.println(dados);
+
+  Serial.print(endereco);  // Printar no monitor serial
+  Serial.print(": Temperatura: ");
+  Serial.println(dados);
 }
 
 void receberDadosDoMaster(int endereco) {
