@@ -7,22 +7,36 @@ void loop() {
   enviarDadosParaSlave("Dados para Slave WiFi", 1);  // Envia para o Slave WiFi (MKR WiFi 1010)
   delay(1000);
 
-  receberDadosDoSlave(3); // Recebe dados do Slave Wifi
+  receberDadosDoSlave1(3); // Recebe dados do Slave Wifi
 
   enviarDadosParaSlave("Dados para Slave Uno", 2);   // Envia para o Slave Uno (Arduino Uno)
   delay(1000);
 
-  receberDadoDoSlave(4); // Recebe dados do Arduino Uno
+  receberDadoDoSlave2(4); // Recebe dados do Arduino Uno
 }
 
-void receberDadosDoSlave(int endereco) {
+void receberDadosDoSlave1(int endereco) {
+  if (Serial1.available() > 0) {
+    String dadosRecebidos = Serial1.readStringUntil('\n');
+    int enderecoRecebido = dadosRecebidos.substring(0, 1).toInt();
+    
+    if (enderecoRecebido == endereco) {
+      String dados = dadosRecebidos.substring(2);
+      Serial1.println("Dados recebidos do Slave 1: " + dados);
+      Serial.println("Dados recebidos do Slave 1: " + dados);
+    }
+  }
+}
+
+void receberDadosDoSlave2(int endereco) {
   if (Serial.available() > 0) {
     String dadosRecebidos = Serial.readStringUntil('\n');
     int enderecoRecebido = dadosRecebidos.substring(0, 1).toInt();
     
     if (enderecoRecebido == endereco) {
       String dados = dadosRecebidos.substring(2);
-      Serial.println("Dados recebidos do Master: " + dados);
+      Serial1.println("Dados recebidos do Slave 1: " + dados);
+      Serial.println("Dados recebidos do Slave 1: " + dados);
     }
   }
 }
