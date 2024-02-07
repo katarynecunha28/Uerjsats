@@ -4,6 +4,8 @@ void setup() {
 
 void loop() {
   receberDadosDoMaster(2);  // Escuta mensagens destinadas ao Slave Uno
+  enviarDadosParaMaster("Dados para Slave WiFi", 4);  // Envia para o Master
+  delay(1000);
 }
 
 void receberDadosDoMaster(int endereco) {
@@ -16,4 +18,12 @@ void receberDadosDoMaster(int endereco) {
       Serial.println("Dados recebidos do Master: " + dados);
     }
   }
+}
+
+void enviarDadosParaMaster(String dados, int endereco) {
+  
+
+  Serial.print(endereco);  // Printar no monitor serial
+  Serial.print(": ");
+  Serial.println(dados);
 }
