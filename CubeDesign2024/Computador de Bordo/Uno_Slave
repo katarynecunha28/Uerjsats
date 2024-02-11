@@ -1,11 +1,23 @@
+unsigned long tempoInicial = 0;
+bool comandoRecebido = false;
+
 void setup() {
   Serial.begin(9600);
 }
 
 void loop() {
   receberDadosDoMaster(2);  // Escuta mensagens destinadas ao Slave Uno
-  enviarDadosParaMaster("Dados para Slave WiFi", 4);  // Envia para o Master
   delay(1000);
+  Serial.println("apos delay");
+  Serial.println(comandoRecebido);
+  
+  if (comandoRecebido) {
+    if (millis() - tempoInicial >= 100) {
+      enviarDadosParaMaster("Dados para MKR 1300", 4);  // Envia para o Master
+      comandoRecebido = false; // Reinicia a flag de comando recebido
+      Serial.println("if concluido");     
+    }
+  }
 }
 
 void receberDadosDoMaster(int endereco) {
@@ -16,6 +28,8 @@ void receberDadosDoMaster(int endereco) {
     if (enderecoRecebido == endereco) {
       String dados = dadosRecebidos.substring(2);
       Serial.println("Dados recebidos do Master: " + dados);
+      comandoRecebido = true; // Define que um comando foi recebido
+      tempoInicial = millis(); // Salva o tempo inicial para enviar a resposta após 10 segundos
     }
   }
 }
@@ -27,3 +41,4 @@ void enviarDadosParaMaster(String dados, int endereco) {
   Serial.print(": ");
   Serial.println(dados);
 }
+
