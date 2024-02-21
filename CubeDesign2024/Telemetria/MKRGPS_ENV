@@ -82,7 +82,7 @@ void loop() {
 
 
   // Construir a string para enviar via LoRa
-  char stemp[120];
+  char stemp[120]; 
   sprintf(stemp, "%d, %f, %f, %f, %f, %f, %f, %d, %d", meuEndereco, temperature, humidity, pressure, illuminance, float(latitude)/1000000, float(longitude)/1000000, satellites, counter);
 
   // Enviar a mensagem via LoRa
