@@ -1,0 +1,70 @@
+unsigned long tempoInicial;
+
+void setup() {
+  Serial.begin(9600);  // Serial para debug e Slave Uno
+  Serial1.begin(9600);
+}
+
+void loop() {
+  if (Serial1.available() > 0 || Serial.available() > 0) {
+    String comando = Serial.readStringUntil('\n');
+    if (comando == "enviar1") { //Switch case 
+      enviarDadosParaSlave("Dados para Slave Pro mini", "CA"); //Mudar pra uma Letra 
+      aguardarResposta();
+    } else if (comando == "enviar2") {
+      enviarDadosParaSlave("Dados para Slave Nano", "SE");
+      aguardarResposta();
+    }
+  }
+}
+
+void aguardarResposta() {
+  tempoInicial = millis();  // Salva o tempo inicial
+  while (millis() - tempoInicial < 5000) {
+    if (receberDadosDoSlaves()) {
+      // Se receber uma resposta de algum dos slaves, sai do loop
+      break;
+    }
+  }
+}
+
+bool receberDadosDoSlaves() {
+  if (Serial1.available() > 0 || Serial.available() > 0) {
+    String dadosRecebidos;
+    if (Serial1.available() > 0) {
+      dadosRecebidos = Serial1.readStringUntil('\n');
+    } else {
+      dadosRecebidos = Serial.readStringUntil('\n');
+    }
+
+    int enderecoRecebido = dadosRecebidos.substring(0, 1).toInt();
+
+    // Verifica o endereço do dispositivo e processa os dados recebidos de acordo
+    switch (enderecoRecebido) {
+      case 3:
+        processarDados("Pro mini Slave", dadosRecebidos.substring(1));
+        return true;
+      case 4:
+        processarDados("Arduino Nano Slave", dadosRecebidos.substring(1));
+        return true;
+      default:
+        return false;  // Retorna false se o endereço não for reconhecido
+    }
+  }
+  return false;  // Retorna false se não receber os dados
+}
+
+void processarDados(String nomeSlave, String dados) {
+  Serial.println("Dados recebidos do " + nomeSlave + ": " + dados);
+  Serial1.println("Dados recebidos do " + nomeSlave + ": " + dados);
+}
+
+void enviarDadosParaSlave(String dados, String endereco) {
+  Serial1.print(endereco);  // Identificador de destino
+  Serial1.print(":");
+  Serial1.println(dados);
+
+  Serial.print(endereco);  // Printar no monitor serial
+  Serial.print(":");
+  Serial.println(dados);
+}
