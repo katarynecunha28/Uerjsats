@@ -1,5 +1,7 @@
+
 unsigned long tempoInicial = 0;
 bool comandoRecebido = false;
+
 
 void setup() {
   Serial.begin(9600);
@@ -28,17 +30,18 @@ void receberDadosDoMaster(int endereco) {
     if (enderecoRecebido == endereco) {
       String dados = dadosRecebidos.substring(2);
       Serial.println("Dados recebidos do Master: " + dados);
+      Serial.println("Dados recebidos do Master: " + dados);
       comandoRecebido = true; // Define que um comando foi recebido
       tempoInicial = millis(); // Salva o tempo inicial para enviar a resposta após 10 segundos
     }
   }
 }
 
-void enviarDadosParaMaster(String dados, int endereco) {
+void enviarDadosParaMaster(String dados, String endereco) {
   
-
   Serial.print(endereco);  // Printar no monitor serial
   Serial.print(": ");
   Serial.println(dados);
+
 }
 
