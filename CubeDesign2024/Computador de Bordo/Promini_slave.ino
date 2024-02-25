@@ -1,4 +1,4 @@
-#include <Arduino_MKRGPS.h>
+
 
 unsigned long tempoInicial = 0;
 bool comandoRecebido = false;
@@ -8,10 +8,6 @@ bool comandoRecebido = false;
 void setup() {
   Serial.begin(9600);
   Serial1.begin(9600);
-  if (!GPS.begin(GPS_MODE_I2C)) {
-    Serial.println("Failed to initialize GPS!");
-    while (1);
-  }
 }
 
 void loop() {
