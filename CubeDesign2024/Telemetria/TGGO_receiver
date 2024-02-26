@@ -8,8 +8,7 @@
 #define RST 14
 #define DIO0 26
 #define BAND 915E6
-#define meuEndereco 42  // Escolha um valor que seja único para o seu
-dispositivo
+#define meuEndereco 42  // Escolha um valor que seja único para o seu dispositivo
 
 void setup() {
   Serial.begin(9600);
