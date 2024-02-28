@@ -1,0 +1,103 @@
+#include <Wire.h>
+#include <Adafruit_INA219.h>
+
+Adafruit_INA219 ina219;
+
+const int pinLM35 = A1; // Pino analógico ao qual o LM35 está conectado
+
+const int pinLM35_2 = A2;
+
+const int pinLM35_3 = A3;
+
+unsigned long tempoInicial = 0;
+bool comandoRecebido = false;
+
+
+char stemp[200]; 
+
+
+void setup() {
+  Serial.begin(9600);
+  if (!ina219.begin()) {
+    Serial.println("Failed to find INA219 chip");
+  } else {
+    ina219.setCalibration_32V_2A();
+    Serial.println("Measuring voltage and current with INA219 ...");
+  }
+
+}
+
+void loop() {
+
+  receberComandoDoMaster(2); // Escuta mensagens destinadas ao Slave Uno
+  delay(1000);
+  
+    float shuntVoltage = ina219.getShuntVoltage_mV();
+    float busVoltage = ina219.getBusVoltage_V();
+    float current_mA = ina219.getCurrent_mA();
+    float loadVoltage = busVoltage + (shuntVoltage / 1000);
+    
+    Serial.print("Bus Voltage:   "); Serial.print(busVoltage); Serial.println(" V");
+    Serial.print("Shunt Voltage: "); Serial.print(shuntVoltage); Serial.println(" mV");
+    Serial.print("Load Voltage:  "); Serial.print(loadVoltage); Serial.println(" V");
+    Serial.print("Current:       "); Serial.print(current_mA); Serial.println(" mA");
+    Serial.println();
+  
+
+
+  int sensorValue = analogRead(pinLM35); // Lê o valor analógico do LM35
+  float temperaturaC = (sensorValue * 0.0048828125) * 100.0; // Converte o valor para temperatura em graus Celsius
+  Serial.print("Temperatura1: ");
+  Serial.print(temperaturaC);
+  Serial.println(" °C");
+
+  int sensorValue2 = analogRead(pinLM35_2); // Lê o valor analógico do LM35
+  float temperaturaC2 = (sensorValue2 * 0.0048828125) * 100.0; // Converte o valor para temperatura em graus Celsius
+  Serial.print("Temperatura2: ");
+  Serial.print(temperaturaC2);
+  Serial.println(" °C");
+
+  int sensorValue3 = analogRead(pinLM35_3); // Lê o valor analógico do LM35
+  float temperaturaC3 = (sensorValue3 * 0.0048828125) * 100.0; // Converte o valor para temperatura em graus Celsius
+  Serial.print("Temperatura3: ");
+  Serial.print(temperaturaC3);
+  Serial.println(" °C");
+
+
+  
+
+  Serial.print(String(temperaturaC3));
+  Serial.println("comando recebido: " + comandoRecebido);
+  if (comandoRecebido) {
+      
+      enviarDadosParaMaster("Dados do Suprimento de Energia: " + String(busVoltage) + "V " + String(current_mA) + "mA " + String(temperaturaC) + "C", 4); // Envia dados para o Master
+      comandoRecebido = false; // Reinicia a flag de comando recebido
+    }
+  
+  delay(1000); // Aguarda 1 segundo antes de ler novamente
+
+  }
+
+bool receberComandoDoMaster(int endereco) {
+  if (Serial.available() > 0) {
+    String dadosRecebidos = Serial.readStringUntil('\n');
+    int enderecoRecebido = dadosRecebidos.substring(0, 1).toInt();
+    
+    if (enderecoRecebido == endereco) {
+      String dados = dadosRecebidos.substring(2);
+      Serial.println("Comando recebido do Master: " + dados);
+      comandoRecebido = true; // Define que um comando foi recebido
+      tempoInicial = millis(); // Salva o tempo inicial para enviar a resposta após 100ms
+    }
+  }
+}
+
+void enviarDadosParaMaster(String dados, int endereco) {
+  Serial.print(endereco);  // Printar no monitor serial
+  Serial.print(": ");
+  Serial.println(dados);
+
+}
+
+
+
