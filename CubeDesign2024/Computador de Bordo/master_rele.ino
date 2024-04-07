@@ -1,50 +1,50 @@
 
-unsigned long tempoInicial;
+unsigned long tempoInicial; // Variável para armazenar o tempo inicial
 
-#include <LoRa.h>
-#include <Arduino_MKRENV.h>
-#include <MKRENV.h>
+#include <LoRa.h> // Inclui a biblioteca LoRa
+#include <Arduino_MKRENV.h> // Inclui a biblioteca Arduino MKR ENV
+#include <MKRENV.h> // Inclui a biblioteca MKR EN
 
 
 
 int meuEndereco = 42;  // Endereço do receptor
-int pinRele = 7;
+int pinRele = 7; // Pino ao qual o relé está conectado
 
-char stemp[120]; 
+char stemp[120]; // String para armazenar os dados dos sensores
 
 void setup() {
-  Serial.begin(9600);
-  Serial1.begin(9600);
+  Serial.begin(9600); // Inicializa a comunicação serial com o computador
+  Serial1.begin(9600); // Inicializa a comunicação serial com o Arduino MKR
 
-  pinMode(pinRele, OUTPUT);
+  pinMode(pinRele, OUTPUT); // Configura o pino do relé como saída
 
-  while(!Serial);
+  while(!Serial); // Aguarda a conexão serial
   
-  if (!LoRa.begin(433E6)) {
-    Serial.println("Starting LoRa failed!");
-    while (1);
+  if (!LoRa.begin(433E6)) { // Inicializa o módulo LoRa na frequência especificada
+    Serial.println("Starting LoRa failed!"); // Mensagem de erro se a inicialização falhar
+    while (1); // Loop infinito
   }
   Serial.println("LoRa Initializing OK!");
 
-  if (!ENV.begin()) {
-    Serial.println("Failed to initialize MKR ENV shield!");
-    while (1);
+  if (!ENV.begin()) { // Inicializa o sensor MKR ENV
+    Serial.println("Failed to initialize MKR ENV shield!"); // Mensagem de erro se a inicialização falhar
+    while (1); // Loop infinito
   }
 }
 
 void loop() {
-  int packetSize = LoRa.parsePacket();
+  int packetSize = LoRa.parsePacket(); // Verifica se há pacotes recebidos
   if (packetSize) {
-    int senderAddress = LoRa.read();
+    int senderAddress = LoRa.read(); // Lê o endereço do remetente
     if (senderAddress == meuEndereco) {
-      String comando = LoRa.readString();
-      Serial.println("Comando recebido: " + comando);
+      String comando = LoRa.readString(); // Lê o comando enviado pelo remetente
+      Serial.println("Comando recebido: " + comando); // Imprime o comando recebido
       processarComando(comando);
     }
   }
-  receberDadosDosSlaves();
+  receberDadosDosSlaves(); // Recebe dados dos outros subsistemas
 
-  // Ler todos os valores dos sensores
+  // Ler todos os valores dos sensores do MKR ENV
   float temperature = ENV.readTemperature();
   float humidity    = ENV.readHumidity();
   float pressure    = ENV.readPressure();
@@ -60,18 +60,18 @@ void loop() {
 void processarComando(String comando) {
   //Serial.println("foi");
   if (comando.equals("A")) {
-    enviarDadosParaSlave("Ligar motor", 1);
+    enviarDadosParaSlave("Ligar motor", 1); //comando para controle de atitude
 
     delay(100);
   } else if (comando.equals("B")) {
-    enviarDadosParaSlave("Dados Suprimento de Energia", 2);
+    enviarDadosParaSlave("Dados Suprimento de Energia", 2); //comando para suprimento de energia
     delay(100);
   } else if (comando.equals("C")) {
-    enviarSensores();
+    enviarSensores(); // envia os dados do MKR ENV
     delay(100);
   }
     else if (comando.equals("D")){
-      enviarComandoParaPython("Dados Portenta", "5");
+      enviarComandoParaPython("Dados Portenta", "5"); //comando para a missão
     }
     else if (comando.equals("E")){
       digitalWrite(pinRele, HIGH);
@@ -79,13 +79,13 @@ void processarComando(String comando) {
       digitalWrite(pinRele, LOW);
       Serial.println("Relé acionado.");
       enviarResposta("Relé acionado.");
-      delay(100);
+      delay(100); //comando para acionar relé
     }
     else if (comando.equals("F")){
-      enviarDadosParaSlave("Mudar angulo", 1);
+      enviarDadosParaSlave("Mudar angulo", 1); //comando para mudar ângulo
     }
     else {
-    // Comando não reconhecido
+    // Se outra coissa for digitada no serial monitor ele printa: Comando não reconhecido
     enviarResposta("Comando não reconhecido.");
     return;
   }
