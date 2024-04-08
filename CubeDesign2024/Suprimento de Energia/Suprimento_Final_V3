@@ -3,21 +3,26 @@
 
 Adafruit_INA219 ina219;
 
-const int pinLM35 = A1; // Pino analógico ao qual o LM35 está conectado
+// Pinos analógicos dos sensores LM35 
 
-const int pinLM35_2 = A2;
+const int pinLM35 = A1; 
 
-const int pinLM35_3 = A3;
+const int pinLM35_2 = A2; 
 
-unsigned long tempoInicial = 0;
-bool comandoRecebido = false;
+const int pinLM35_3 = A3; 
 
+// Variável para armazenar o tempo inicial
+unsigned long tempoInicial = 0; 
 
-char stemp[200]; 
+// Flag para indicar se um comando foi recebido do Master
+bool comandoRecebido = false;  
 
 
 void setup() {
-  Serial.begin(9600);
+
+  Serial.begin(9600); // Inicia a comunicação serial com a taxa de transmissão de 9600 baud
+
+// Verifica se o chip INA219 está disponível
   if (!ina219.begin()) {
     Serial.println("Failed to find INA219 chip");
   } else {
@@ -29,8 +34,10 @@ void setup() {
 
 void loop() {
 
-  receberComandoDoMaster(2); // Escuta mensagens destinadas ao Slave Uno
+  receberComandoDoMaster(2); // Escuta mensagens destinadas ao Slave Nano
   delay(1000);
+
+// Printa os valores lidos do sensor INA219
   
     float shuntVoltage = ina219.getShuntVoltage_mV();
     float busVoltage = ina219.getBusVoltage_V();
@@ -66,8 +73,12 @@ void loop() {
 
   
 
-  Serial.print(String(temperaturaC3));
-  Serial.println("comando recebido: " + comandoRecebido);
+  Serial.print(String(temperaturaC3)); //Converte em string o valor do sensor calibrado
+
+  Serial.println("comando recebido: " + comandoRecebido); //Printa o comando recebido
+
+
+// Se o comando for recebido, envia os dados para o Master, que tem um endereço 4
   if (comandoRecebido) {
       
       enviarDadosParaMaster("Dados do Suprimento de Energia: " + String(busVoltage) + "V " + String(current_mA) + "mA " + String(temperaturaC) + "C", 4); // Envia dados para o Master
@@ -77,6 +88,8 @@ void loop() {
   delay(1000); // Aguarda 1 segundo antes de ler novamente
 
   }
+
+// Função para receber comandos do Master
 
 bool receberComandoDoMaster(int endereco) {
   if (Serial.available() > 0) {
@@ -92,6 +105,7 @@ bool receberComandoDoMaster(int endereco) {
   }
 }
 
+// Função para enviar dados para o Master
 void enviarDadosParaMaster(String dados, int endereco) {
   Serial.print(endereco);  // Printar no monitor serial
   Serial.print(": ");
