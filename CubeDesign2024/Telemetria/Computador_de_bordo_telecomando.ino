@@ -4,7 +4,8 @@
 
 #define BAND 915E6
 
-int meuEndereco = 42;  // Endereço do receptor
+int meuEndereco = 41;  // Endereço do receptor
+int endereçoTransmissor = 42;
 
 void setup() {
   Serial.begin(9600);
@@ -27,7 +28,7 @@ void loop() {
   int packetSize = LoRa.parsePacket();
   if (packetSize) {
     int senderAddress = LoRa.read();
-    if (senderAddress == meuEndereco) {
+    if (senderAddress == endereçoTransmissor) {
       String comando = LoRa.readString();
       Serial.println("Comando recebido: " + comando);
       processarComando(comando);
@@ -92,19 +93,19 @@ void processarDados(String nomeSlave, String dados) {
 }
 
 void enviarDadosParaSlave(String dados, int endereco) {
-  Serial1.print(endereco);  // Identificador de destino
+  Serial1.print(endereco);  
   Serial1.print(":");
   Serial1.println(dados);
 
-  Serial.print(endereco);  // Printar no monitor serial
+  Serial.print(endereco);  
   Serial.print(":");
   Serial.println(dados);
 }
 
 void enviarResposta(String resposta) {
-  // Envia a resposta de volta para o transmissor
+  
   LoRa.beginPacket();
-  LoRa.write(meuEndereco); // Endereço do receptor
+  LoRa.write(endereçoTransmissor); //Envia para o transmissor de número 42
   LoRa.print(resposta);
   LoRa.endPacket();
 
