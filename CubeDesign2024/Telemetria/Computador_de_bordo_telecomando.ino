@@ -4,8 +4,8 @@
 
 #define BAND 915E6
 
-int meuEndereco = 41;  // Endereço do receptor
-int endereçoTransmissor = 42;
+int meuEndereco = 41;  // Endereço do Computador de Bordo
+int endereçoTransmissor = 42; //Endereço da Estação Base
 
 void setup() {
   Serial.begin(9600);
@@ -28,7 +28,7 @@ void loop() {
   int packetSize = LoRa.parsePacket();
   if (packetSize) {
     int senderAddress = LoRa.read();
-    if (senderAddress == endereçoTransmissor) {
+    if (senderAddress == endereçoTransmissor) { //Se a mensagem que chegar tiver o código 42, significa que a estação base que está enviando um comando
       String comando = LoRa.readString();
       Serial.println("Comando recebido: " + comando);
       processarComando(comando);
@@ -105,7 +105,7 @@ void enviarDadosParaSlave(String dados, int endereco) {
 void enviarResposta(String resposta) {
   
   LoRa.beginPacket();
-  LoRa.write(endereçoTransmissor); //Envia para o transmissor de número 42
+  LoRa.write(meuEndereco); //Envia dados para a estação base com o endereço do computador de bordo (41)
   LoRa.print(resposta);
   LoRa.endPacket();
 
