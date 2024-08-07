@@ -7,7 +7,10 @@ unsigned long tempoInicial;
 
 
 
-int meuEndereco = 42;  // Endereço do receptor
+int meuEndereco = 42;  // Endereço do Computador de Bordo
+
+int enderecoBase = 41; //Endereço da Estação Base
+
 
 char stemp[120]; 
 
@@ -33,7 +36,7 @@ void loop() {
   int packetSize = LoRa.parsePacket();
   if (packetSize) {
     int senderAddress = LoRa.read();
-    if (senderAddress == meuEndereco) {
+    if (senderAddress == enderecoBase) {    //Verifica se a mensagem recebida está vindo da Estação Base, cujo o endereço é 41
       String comando = LoRa.readString();
       Serial.println("Comando recebido: " + comando);
       processarComando(comando);
@@ -57,17 +60,17 @@ void loop() {
 void processarComando(String comando) {
   //Serial.println("foi");
   if (comando.equals("A")) {
-    enviarDadosParaSlave("Dados para Slave Pro mini", 1);
+    enviarDadosParaSlave("Dados para Suprimento de Energia", 1);
     delay(100);
   } else if (comando.equals("B")) {
-    enviarDadosParaSlave("Dados para Slave Nano", 2);
+    enviarDadosParaSlave("Dados para Controle de Atitude", 2);
     delay(100);
   } else if (comando.equals("C")) {
     enviarSensores();
     delay(100);
   }
     else if (comando.equals("D")){
-      enviarComandoParaPython("Dados Portenta", "5");
+      enviarComandoParaPython("Dados para Missão", "5");
     }
     else {
     // Comando não reconhecido
@@ -80,31 +83,32 @@ void processarComando(String comando) {
 
 
 bool receberDadosDosSlaves() {
-  if (Serial1.available() > 0 || Serial.available() > 0) {
+  if (Serial1.available() > 0 || Serial.available() > 0) { 
     String dadosRecebidos;
-    if (Serial1.available() > 0) {
-      dadosRecebidos = Serial1.readStringUntil('\n');
+    if (Serial1.available() > 0) {    //Lê a Serial para ver se tem algum dado disponível
+      dadosRecebidos = Serial1.readStringUntil('\n'); 
     } else {
       dadosRecebidos = Serial.readStringUntil('\n');
     }
 
     int enderecoRecebido = dadosRecebidos.substring(0, 1).toInt();
     
-    // Verifica o endereço do dispositivo e processa os dados recebidos de acordo
+    // Verifica o endereço de cada dispositivo e processe os dados recebidos de cada subsistema de acordo com o código deles
     switch (enderecoRecebido) {
       case 3:
-        processarDados("Pro mini Slave", dadosRecebidos.substring(1));
+        processarDados("Suprimento de Energia", dadosRecebidos.substring(1)); //Dados do Suprimento de Energia
         return true;
       case 4:
-        processarDados("Arduino Nano Slave", dadosRecebidos.substring(1));
+        processarDados("Controle de Atitude", dadosRecebidos.substring(1)); //Dados do Controle de Atitude
         return true;
 
       case 6:
-        processarDados("Portenta", dadosRecebidos.substring(1));
+        processarDados("Missão", dadosRecebidos.substring(1)); //Dados da Missão
         return true;
         
       default:
         return false;  // Retorna false se o endereço não for reconhecido
+        Serial.println("Endereço não reconhecido");
     }
   }
   return false;  // Retorna false se não receber os dados
@@ -119,7 +123,7 @@ void processarDados(String nomeSlave, String dados) {
 }
 
 void enviarDadosParaSlave(String dados, int endereco) {
-  Serial1.print(endereco);  // Identificador de destino
+  Serial1.print(endereco);  // Envia os dados para endereço específico
   Serial1.print(":");
   Serial1.println(dados);
 
@@ -128,10 +132,10 @@ void enviarDadosParaSlave(String dados, int endereco) {
   Serial.println(dados);
 }
 
-void enviarResposta(String resposta) {
-  // Envia a resposta de volta para o transmissor
+void enviarResposta(String resposta) { 
+  // Envia os dados recebidos dos outros subsistemas para a estação base
   LoRa.beginPacket();
-  LoRa.write(meuEndereco); // Endereço do receptor
+  LoRa.write(meuEndereco); // Envia o endereço do computador de bordo, para a leitura da estação base
   LoRa.print(resposta);
   LoRa.endPacket();
 
@@ -139,26 +143,26 @@ void enviarResposta(String resposta) {
 }
 
 void enviarSensores() {
-  // Envia a resposta de volta para o transmissor
+  // Envia os dados dos sensores da placa do computador de bordo para a estação base
   LoRa.beginPacket();
-  LoRa.write(meuEndereco); // Endereço do receptor
+  LoRa.write(meuEndereco); // Envia o endereço do computador de bordo, para a leitura da estação base
   LoRa.print(stemp);
   LoRa.endPacket();
 
   Serial.println("Resposta enviada: " + String(stemp));
 }
 
-void enviarComandoParaPython(String endereco, String dados){
-  Serial1.print(endereco);  // Identificador de destino
+void enviarComandoParaPython(String endereco, String dados){  //Enviar comando para portenta (missão)
+  Serial1.print(endereco);  
   Serial1.print(":");
   Serial1.println(dados);
 
-  Serial.print(endereco);  // Printar no monitor serial
+  Serial.print(endereco);  
   Serial.print(":");
   Serial.println(dados);
 }
 
-void receberDadosDoPython() {
+void receberDadosDoPython() {           //Receber dados do Portenta
   if (Serial1.available() > 0) {
     String dadosRecebidos = Serial1.readStringUntil('\n');
    
