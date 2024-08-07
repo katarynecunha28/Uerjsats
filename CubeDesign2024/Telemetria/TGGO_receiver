@@ -8,7 +8,9 @@
 #define RST 14
 #define DIO0 26
 #define BAND 915E6
-#define meuEndereco 42  // Escolha um valor que seja único para o seu dispositivo
+
+#define meuEndereco 42  // Endereço da Estação Base
+#define enderecoCB 41  // Endereço do Computador de Bordo
 
 void setup() {
   Serial.begin(9600);
@@ -26,8 +28,11 @@ void setup() {
 void loop() {
   if (Serial.available() > 0) {
     String comando = Serial.readStringUntil('\n');
-    enviarComando(comando, meuEndereco);
+    enviarComando(comando, enderecoCB);
   }
+
+  verificarResposta(meuEndereco);
+  delay(100);
 }
 
 void enviarComando(String comando, int address) {
@@ -38,23 +43,16 @@ void enviarComando(String comando, int address) {
 
   Serial.println("Comando enviado: " + comando);
 
-  int timeout = 10000;  // Tempo limite em milissegundos
-  unsigned long startTime = millis();
+  delay(500);
+}
 
-  while (millis() - startTime < timeout) {
-    int packetSize = LoRa.parsePacket();
-    if (packetSize) {
-      int senderAddress = LoRa.read();
-      if (senderAddress == address) {
-        String resposta = LoRa.readString();
-
-        Serial.println("Resposta do Receiver: " + resposta);
-
-
-        return;
-      }
+void verificarResposta(int address) {
+  int packetSize = LoRa.parsePacket();
+  if (packetSize) {
+    int senderAddress = LoRa.read();
+    if (senderAddress == address) {
+      String resposta = LoRa.readString();
+      Serial.println("Resposta do Receiver: " + resposta);
     }
   }
-
-  Serial.println("Timeout: Nenhuma resposta do Receiver.");
 }
