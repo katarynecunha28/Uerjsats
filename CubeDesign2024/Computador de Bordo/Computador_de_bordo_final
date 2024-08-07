@@ -42,7 +42,7 @@ void loop() {
       processarComando(comando);
     }
   }
-  receberDadosDosSlaves();
+  receberDadosDosSlaves(4);
 
   // Ler todos os valores dos sensores
   float temperature = ENV.readTemperature();
