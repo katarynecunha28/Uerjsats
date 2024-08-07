@@ -82,7 +82,7 @@ void processarComando(String comando) {
 
 
 
-bool receberDadosDosSlaves() {
+bool receberDadosDosSlaves(int endereco) {
   if (Serial1.available() > 0 || Serial.available() > 0) { 
     String dadosRecebidos;
     if (Serial1.available() > 0) {    //Lê a Serial para ver se tem algum dado disponível
