@@ -10,8 +10,8 @@ TinyGPSPlus tinyGPS; // Create a TinyGPSPlus object
 #define GPS_BAUD 9600  // GPS module baud rate. 
 
 #include <SoftwareSerial.h>
-#define ARDUINO_GPS_RX 38// GPS TX, Arduino RX pin
-#define ARDUINO_GPS_TX 36 // GPS RX, Arduino TX pin
+#define ARDUINO_GPS_RX 36// GPS TX, Arduino RX pin
+#define ARDUINO_GPS_TX 38 // GPS RX, Arduino TX pin
 SoftwareSerial ssGPS(ARDUINO_GPS_TX, ARDUINO_GPS_RX); // Create a SoftwareSerial
 
 // Set gpsPort to either ssGPS if using SoftwareSerial or Serial1 if using an
