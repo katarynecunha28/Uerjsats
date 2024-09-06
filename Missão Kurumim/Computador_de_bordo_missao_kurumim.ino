@@ -238,13 +238,8 @@ void processarComando(String comando) {
 
 
 bool receberDadosDosSlaves(int endereco) {
-  if (Serial1.available() > 0 || Serial.available() > 0) { //ACHO QUE TEM QUE TIRAR O SERIAL1 SE NÃO O CÓDIGO NÃO VAI RODAR NO ESP 32
-    String dadosRecebidos;
-    if (Serial1.available() > 0) {    //Lê a Serial para ver se tem algum dado disponível
-      dadosRecebidos = Serial1.readStringUntil('\n'); 
-    } else {
-      dadosRecebidos = Serial.readStringUntil('\n');
-    }
+  if (Serial.available() > 0) {   
+    String dadosRecebidos = Serial.readStringUntil('\n');
 
     int enderecoRecebido = dadosRecebidos.substring(0, 1).toInt();
     
