@@ -1,0 +1,42 @@
+#include <SPI.h>
+#include <LoRa.h>
+
+#define SCK 5
+#define MISO 19
+#define MOSI 27
+#define SS 18
+#define RST 14
+#define DIO0 26
+#define BAND 915E6
+
+#define meuEndereco 42  // Endereço da Estação Base
+#define enderecoCB 41  // Endereço do Computador de Bordo
+
+void setup() {
+  Serial.begin(9600);
+
+  SPI.begin(SCK, MISO, MOSI, SS);
+  LoRa.setPins(SS, RST, DIO0);
+
+  if (!LoRa.begin(BAND)) {
+    Serial.println("Starting LoRa failed!");
+    while (1);
+  }
+  Serial.println("LoRa Initializing OK!");
+}
+
+void loop() {
+  verificarResposta(meuEndereco);
+  delay(100);
+}
+
+void verificarResposta(int address) {
+  int packetSize = LoRa.parsePacket();
+  if (packetSize) {
+    int senderAddress = LoRa.read();
+    if (senderAddress == address) {
+      String resposta = LoRa.readString();
+      Serial.println("Resposta do Receiver: " + resposta);
+    }
+  }
+}
