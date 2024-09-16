@@ -54,6 +54,7 @@ const int sensorPin = 25;
 
 //Tempo 
 unsigned long tempoInicial;
+bool comandoRecebido = false;
 
 // Receiver Address
 
@@ -64,6 +65,8 @@ int enderecoBase = 41; //Endereço da Estação Base
 //Char para envio de dados dos sensores da placa de computador de bordo
 
 char stemp[200]; 
+
+String dados;
 
 void setup() {
   SerialMonitor.begin(9600);
@@ -76,7 +79,7 @@ void setup() {
   if (!bmp.begin (0x76)) {
     Serial.println("Failed to find BMP280");
   }
-
+  Serial.print("OI, EU SOU O BATMAN");
   //Initialize MPU6050
   if (!mpu.begin(0x68)) {
     Serial.println("Failed to find MPU6050 chip");
@@ -96,15 +99,8 @@ void setup() {
 
 void loop() {
 
-   int packetSize = LoRa.parsePacket();
-  if (packetSize) {
-    int senderAddress = LoRa.read();
-    if (senderAddress == enderecoBase) {    //Verifica se a mensagem recebida está vindo da Estação Base, cujo o endereço é 41
-      String comando = LoRa.readString();
-      Serial.println("Comando recebido: " + comando);
-      processarComando(comando);
-    }
-  }
+  enviarDadosParaSlave("Dados para Suprimento de Energia", 2);
+
   receberDadosDosSlaves(4);
 
   // OPT101 Values
@@ -156,6 +152,7 @@ void loop() {
           accelX, accelY, accelZ,
           gyroX, gyroY, gyroZ,
           sensorValue);
+  
 
   delay(1500);
 }
@@ -222,21 +219,6 @@ String gatherGPSInfo() {
   return gpsInfo;
 }
 
-void processarComando(String comando) {
-  //Serial.println("foi");
-  if (comando.equals("A")) {
-    enviarDadosParaSlave("Dados para Suprimento de Energia", 1);
-    delay(100);
-  } 
-    else {
-    // Comando não reconhecido
-    enviarResposta("Comando não reconhecido.");
-    return;
-  }
-
-}
-
-
 bool receberDadosDosSlaves(int endereco) {
   if (Serial.available() > 0) {   
     String dadosRecebidos = Serial.readStringUntil('\n');
@@ -244,11 +226,13 @@ bool receberDadosDosSlaves(int endereco) {
     int enderecoRecebido = dadosRecebidos.substring(0, 1).toInt();
     
     // Verifica o endereço de cada dispositivo e processe os dados recebidos de cada subsistema de acordo com o código deles
-    switch (enderecoRecebido) {
-      case 3:
-        processarDados("Suprimento de Energia", dadosRecebidos.substring(1)); //Dados do Suprimento de Energia
-        return true;
-        
+    switch (enderecoRecebido == endereco) {
+      case 4:
+        dados = dadosRecebidos.substring(1);
+        Serial.println("Dados Suprimento de Energia: " + dados);
+        enviarResposta(dados);
+        tempoInicial = millis(); // Salva o tempo inicial para enviar a resposta após 100ms
+        return true; //flag que define que um comando foi recebido
       default:
         return false;  // Retorna false se o endereço não for reconhecido
         Serial.println("Endereço não reconhecido");
