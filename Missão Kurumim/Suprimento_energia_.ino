@@ -41,7 +41,7 @@ void setup() {
 }
 
 void loop() {
-  receberComandoDoMaster(2); // Recebe os comandos destinados ao Suprimento de Energia
+  receberComandoDoMaster(0); // Recebe os comandos destinados ao Suprimento de Energia
   delay(1000);
   
   // Ler a tensão do barramento em volts
