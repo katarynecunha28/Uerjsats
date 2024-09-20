@@ -145,9 +145,7 @@ void loop() {
   
   printGPSInfo();
 
-  sprintf(stemp, "Temperature: %.2f, Humidity: %.2f, Pressure: %.2f, Altitude: %.2f, "
-                      "Acceleration(XYZ): %.2f,%.2f,%.2f, Gyroscope(XYZ): %.2f,%.2f,%.2f, "
-                      "Sensor Value: %d",
+  sprintf(stemp, " %.2f, %.2f, %.2f, %.2f, %.2f, %.2f, %.2f, %.2f, %.2f, %.2f, %d",
           temperaturaDHT, umidade, pressao, altitude,
           accelX, accelY, accelZ,
           gyroX, gyroY, gyroZ,
