@@ -72,7 +72,7 @@ void loop() {
   Serial.println("Comando recebido: " + String(comandoRecebido));
 
   if (comandoRecebido) {
-    enviarDadosParaMaster( String(busVoltage) + String(current_mA) + String(tempbateria1) + String(tempbateria2) + String(tempbateria3), 4); // Envia dados para o Master
+    enviarDadosParaMaster( String(busVoltage) + " " + String(current_mA) + " " + String(tempbateria1) + " " + String(tempbateria2) + " "+ String(tempbateria3), 4); // Envia dados para o Master
     comandoRecebido = false; // Reinicia a flag de comando recebido
   }
 
