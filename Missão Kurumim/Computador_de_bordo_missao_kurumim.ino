@@ -64,7 +64,7 @@ int enderecoBase = 41; //Endereço da Estação Base
 
 //Char para envio de dados dos sensores da placa de computador de bordo
 
-char stemp[200]; 
+char stemp[300]; 
 
 String dados;
 
@@ -79,7 +79,7 @@ void setup() {
   if (!bmp.begin (0x76)) {
     Serial.println("Failed to find BMP280");
   }
-  Serial.print("OI, EU SOU O BATMAN");
+
   //Initialize MPU6050
   if (!mpu.begin(0x68)) {
     Serial.println("Failed to find MPU6050 chip");
@@ -100,27 +100,23 @@ void setup() {
 
 void loop() {
 
-  enviarDadosParaSlave("Dados para Suprimento de Energia", 2);
 
-  receberDadosDosSlaves(4);
+  receberDadosDosSlaves(0);
 
   // OPT101 Values
   float sensorValue = analogRead(sensorPin);
-  Serial.println(sensorValue);
+
 
  //DHT22
 
   float umidade = dht.readHumidity();           // Read humidity from DHT22
   float temperaturaDHT = dht.readTemperature();  // Read temperature from DHT22
 
-  Serial.print("Temperatura: " + String(temperaturaDHT) + " Umidade: " + String(umidade));
-
   //BMP280
 
   float pressao = bmp.readPressure() / 100; // Read pressure from BMP280
   float altitude = bmp.readAltitude(1013.25); // Read altitude from BMP280
 
-  Serial.println(" Pressão: " + String(pressao) + " Altitude: " + String(altitude));
 
   //MPU6050
 
@@ -131,27 +127,31 @@ void loop() {
   float accelX = a.acceleration.x; // Accel X
   float accelY = a.acceleration.y; // Accel y
   float accelZ = a.acceleration.z; // Accel z
-  Serial.print("aceleracao: ");
-  Serial.println(" x: " + String(accelX) + " y: " + String(accelY) + " z: " + String(accelZ));
+
 
   float gyroX = g.gyro.x; // Gyro x
   float gyroY = g.gyro.y; // Gyro y
   float gyroZ = g.gyro.z; // Gyro z
-  Serial.print("giroscopio: ");
-  Serial.println(" x: " + String(gyroX) + " y: " + String(gyroY) + " z: " + String(gyroZ));
 
-  Serial.println();
 
   //GPS
   
-  printGPSInfo();
+  float latitude = tinyGPS.location.lat();
+  float longitude = tinyGPS.location.lng();
+  float altitudeGPS = tinyGPS.altitude.meters();
+  int satellites = tinyGPS.satellites.value();
 
-  sprintf(stemp, " %.2f, %.2f, %.2f, %.2f, %.2f, %.2f, %.2f, %.2f, %.2f, %.2f, %d",
-          temperaturaDHT, umidade, pressao, altitude,
-          accelX, accelY, accelZ,
-          gyroX, gyroY, gyroZ,
-          sensorValue);
+  sprintf(stemp, "%.2f, %.2f, %.2f, %.2f, %.2f, %.2f, %.2f, %.2f, %.2f, %.2f, %d, %.6f, %.6f, %.2f, %d",
+         temperaturaDHT, umidade, pressao, altitude,
+         accelX, accelY, accelZ,
+         gyroX, gyroY, gyroZ,
+         sensorValue, latitude, longitude, altitudeGPS, satellites);
+
+  enviarSensores();
   
+  delay(1500);
+
+  enviarDadosParaSlave("Dados para Suprimento de Energia", 0);
 
   delay(1500);
 }
@@ -221,24 +221,17 @@ String gatherGPSInfo() {
 bool receberDadosDosSlaves(int endereco) {
   if (Serial.available() > 0) {   
     String dadosRecebidos = Serial.readStringUntil('\n');
-
     int enderecoRecebido = dadosRecebidos.substring(0, 1).toInt();
     
     // Verifica o endereço de cada dispositivo e processe os dados recebidos de cada subsistema de acordo com o código deles
-    switch (enderecoRecebido == endereco) {
-      case 4:
-        dados = dadosRecebidos.substring(1);
-        Serial.println("Dados Suprimento de Energia: " + dados);
+    if (enderecoRecebido == endereco) {
+        String dados = dadosRecebidos.substring(2);
         enviarResposta(dados);
+        comandoRecebido = true; //flag que define que um comando foi recebido
         tempoInicial = millis(); // Salva o tempo inicial para enviar a resposta após 100ms
-        return true; //flag que define que um comando foi recebido
-      default:
-        return false;  // Retorna false se o endereço não for reconhecido
-        Serial.println("Endereço não reconhecido");
     }
   }
-  return false;  // Retorna false se não receber os dados
-  Serial.println("nao recebi");
+  return comandoRecebido;
 }
 
 void processarDados(String nomeSlave, String dados) {
@@ -260,8 +253,6 @@ void enviarResposta(String resposta) {
   LoRa.write(meuEndereco); // Envia o endereço do computador de bordo, para a leitura da estação base
   LoRa.print(resposta);
   LoRa.endPacket();
-
-  Serial.println("Resposta enviada: " + resposta);
 }
 
 void enviarSensores() {
@@ -270,6 +261,5 @@ void enviarSensores() {
   LoRa.write(meuEndereco); // Envia o endereço do computador de bordo, para a leitura da estação base
   LoRa.print(stemp);
   LoRa.endPacket();
-
-  Serial.println("Resposta enviada: " + String(stemp));
+  delay(1000);
 }
