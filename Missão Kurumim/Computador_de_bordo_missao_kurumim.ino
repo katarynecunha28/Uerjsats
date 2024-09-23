@@ -95,6 +95,7 @@ void setup() {
     while (1);
   }
   Serial.println("LoRa Initializing OK!");
+  delay(1000);
 }
 
 void loop() {
