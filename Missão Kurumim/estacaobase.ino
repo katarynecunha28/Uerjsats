@@ -1,42 +1,54 @@
 #include <SPI.h>
 #include <LoRa.h>
 
-#define SCK 5
-#define MISO 19
-#define MOSI 27
-#define SS 18
-#define RST 14
-#define DIO0 26
-#define BAND 915E6
+// Pinos definidos especificamente para o ESP32 Heltec com LoRa
+#define LORA_SS 18
+#define LORA_RST 14
+#define LORA_DIO0 26
 
-#define meuEndereco 42  // Endereço da Estação Base
-#define enderecoCB 41  // Endereço do Computador de Bordo
+// Endereço que o receptor deve aceitar
+#define RECEIVER_ADDRESS 42
 
 void setup() {
   Serial.begin(9600);
+  while (!Serial);
 
-  SPI.begin(SCK, MISO, MOSI, SS);
-  LoRa.setPins(SS, RST, DIO0);
+  // Configura os pinos do LoRa
+  LoRa.setPins(LORA_SS, LORA_RST, LORA_DIO0);
 
-  if (!LoRa.begin(BAND)) {
-    Serial.println("Starting LoRa failed!");
+  // Inicializa o módulo LoRa na frequência desejada
+  if (!LoRa.begin(915E6)) { // Altere a frequência conforme necessário
+    Serial.println("Erro ao iniciar o módulo LoRa!");
     while (1);
   }
-  Serial.println("LoRa Initializing OK!");
+
+  Serial.println("Módulo LoRa iniciado com sucesso!");
 }
 
 void loop() {
-  verificarResposta(meuEndereco);
-  delay(100);
-}
-
-void verificarResposta(int address) {
+  // Verifica se há algum pacote recebido
   int packetSize = LoRa.parsePacket();
   if (packetSize) {
-    int senderAddress = LoRa.read();
-    if (senderAddress == address) {
-      String resposta = LoRa.readString();
-      Serial.println("Resposta do Receiver: " + resposta);
+
+    // Lê o endereço de destino do pacote
+    int destinationAddress = LoRa.read();
+
+    // Verifica se o endereço de destino é o correto
+    if (destinationAddress == RECEIVER_ADDRESS) {
+      // Lê a mensagem
+      String receivedMessage = "";
+      while (LoRa.available()) {
+        receivedMessage += (char)LoRa.read();
+      }
+
+      // Imprime a mensagem recebida no Serial Monitor
+      Serial.print("Mensagem recebida do endereço ");
+      Serial.print(destinationAddress);
+      Serial.print(": ");
+      Serial.println(receivedMessage);
+    } else {
+      // Ignorar pacotes com endereços de destino diferentes
+      Serial.println("Pacote ignorado devido ao endereço de destino incorreto");
     }
   }
 }
