@@ -48,11 +48,6 @@ void loop() {
   float busVoltage = ina219.getBusVoltage_V();
   // Ler a corrente em miliamperes
   float current_mA = ina219.getCurrent_mA();
-    
-  // Printa os valores da tensão do barramento e corrente na serial
-  Serial.print("Tensão do Barramento:   "); Serial.print(busVoltage); Serial.println(" V");
-  Serial.print("Corrente:       "); Serial.print(current_mA); Serial.println(" mA");
-  Serial.println();
 
   // Lê a Temperatura dos sensores
   sensor1.requestTemperatures();
@@ -63,17 +58,10 @@ void loop() {
   float tempbateria2 = sensor2.getTempCByIndex(0);
   float tempbateria3 = sensor3.getTempCByIndex(0);
 
-  // Printa os valores de temperatura das baterias
-  Serial.print("Temperatura da Bateria 1: "); Serial.println(tempbateria1);
-  Serial.print("Temperatura da Bateria 2: "); Serial.println(tempbateria2);
-  Serial.print("Temperatura da Bateria 3: "); Serial.println(tempbateria3);
-  Serial.println();
-
-  Serial.println("Comando recebido: " + String(comandoRecebido));
-
   if (comandoRecebido) {
-    enviarDadosParaMaster( String(busVoltage) + " " + String(current_mA) + " " + String(tempbateria1) + " " + String(tempbateria2) + " "+ String(tempbateria3), 4); // Envia dados para o Master
+    enviarDadosParaMaster( String(busVoltage) + " " + String(current_mA) + " " + String(tempbateria1) + " " + String(tempbateria2) + " "+ String(tempbateria3), 0); // Envia dados para o Master
     comandoRecebido = false; // Reinicia a flag de comando recebido
+    delay(2000);
   }
 
   delay(1000); // Aguarda 1 segundo antes de ler novamente
@@ -84,9 +72,8 @@ bool receberComandoDoMaster(int endereco) {
     String dadosRecebidos = Serial.readStringUntil('\n');
     int enderecoRecebido = dadosRecebidos.substring(0, 1).toInt();
     
-    if (enderecoRecebido == endereco) { //Se o endereço recebido for igual a 2, ele printa os dados recebidos do master
+    if (enderecoRecebido == endereco) { //Se o endereço recebido for igual a 0, ele printa os dados recebidos do master
       String dados = dadosRecebidos.substring(2);
-      Serial.println("Comando recebido do Master: " + dados);
       comandoRecebido = true; //flag que define que um comando foi recebido
       tempoInicial = millis(); // Salva o tempo inicial para enviar a resposta após 100ms
     }
