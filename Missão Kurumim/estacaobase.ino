@@ -46,6 +46,12 @@ void loop() {
       Serial.print(destinationAddress);
       Serial.print(": ");
       Serial.println(receivedMessage);
+
+      //print RSSI of packet
+      int rssi = LoRa.packetRssi();
+      Serial.print(" with RSSI ");    
+      Serial.println(rssi);
+
     } else {
       // Ignorar pacotes com endereços de destino diferentes
       Serial.println("Pacote ignorado devido ao endereço de destino incorreto");
