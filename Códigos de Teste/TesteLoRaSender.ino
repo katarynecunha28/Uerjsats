@@ -9,6 +9,9 @@
 // Endereço do transmissor
 #define SENDER_ADDRESS 42
 
+// Variável global para contar pacotes enviados
+int packetCounter = 0;
+
 void setup() {
   Serial.begin(9600);
   while (!Serial);
@@ -38,8 +41,12 @@ void loop() {
   // Finalizar o pacote
   LoRa.endPacket();
 
+  // Incrementa o contador de pacotes enviados
+  packetCounter++;
+
   // Imprimir no Serial Monitor para depuração
-  Serial.println("Mensagem enviada: Olá");
+  Serial.print("Mensagem enviada: Olá - Pacotes enviados: ");
+  Serial.println(packetCounter);
 
   // Aguardar um pouco antes de enviar a próxima mensagem
   delay(1000); // Aguardar 1 segundo
