@@ -9,6 +9,9 @@
 // Endereço que o receptor deve aceitar
 #define RECEIVER_ADDRESS 42
 
+// Variável global para contar pacotes recebidos
+int packetCounter = 0;
+
 void setup() {
   Serial.begin(9600);
   while (!Serial);
@@ -41,11 +44,18 @@ void loop() {
         receivedMessage += (char)LoRa.read();
       }
 
+      // Incrementa o contador de pacotes
+      packetCounter++;
+
       // Imprime a mensagem recebida no Serial Monitor
       Serial.print("Mensagem recebida do endereço ");
       Serial.print(destinationAddress);
       Serial.print(": ");
       Serial.println(receivedMessage);
+
+      // Imprime o número de pacotes recebidos
+      Serial.print("Número de pacotes recebidos: ");
+      Serial.println(packetCounter);
 
       //print RSSI of packet
       int rssi = LoRa.packetRssi();
