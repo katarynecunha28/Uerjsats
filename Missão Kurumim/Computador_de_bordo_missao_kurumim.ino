@@ -4,32 +4,29 @@
 #define DHTTYPE DHT22   // DHT 22  
 DHT dht(DHTPIN, DHTTYPE);
 
-#include <TinyGPS++.h> // Include the TinyGPS++ library
-TinyGPSPlus tinyGPS; // Create a TinyGPSPlus object
+#include <TinyGPS++.h>
+TinyGPSPlus tinyGPS; 
 
-#define GPS_BAUD 9600  // GPS module baud rate. 
+#define GPS_BAUD 9600  // GPS baud rate 
 
 #include <SoftwareSerial.h>
 #define ARDUINO_GPS_RX 36// GPS TX, Arduino RX pin
 #define ARDUINO_GPS_TX 38 // GPS RX, Arduino TX pin
-SoftwareSerial ssGPS(ARDUINO_GPS_TX, ARDUINO_GPS_RX); // Create a SoftwareSerial
+SoftwareSerial ssGPS(ARDUINO_GPS_TX, ARDUINO_GPS_RX); // Cria a SoftwareSerial
 
-// Set gpsPort to either ssGPS if using SoftwareSerial or Serial1 if using an
-// Arduino with a dedicated hardware serial port
-#define gpsPort ssGPS  // Alternatively, use Serial1 on the Leonardo
+#define gpsPort ssGPS //GPS
 
-// Define the serial monitor port.
 #define SerialMonitor Serial
 
 #include <Adafruit_BMP280.h>
 
-//BMP 280 pins
+//BMP 280 
 #define BMP_SDA 21
 #define BMP_SCL 22
 
 Adafruit_BMP280 bmp;
 
-//GY
+//GY-521
 
 #include <Adafruit_Sensor.h>
 #include <Adafruit_MPU6050.h>
@@ -56,11 +53,9 @@ const int sensorPin = 25;
 unsigned long tempoInicial;
 bool comandoRecebido = false;
 
-// Receiver Address
+// Endereço único do rádio
 
-int meuEndereco = 42;  // Endereço do Computador de Bordo
-
-int enderecoBase = 41; //Endereço da Estação Base
+int meuEndereco = 42;  
 
 //Char para envio de dados dos sensores da placa de computador de bordo
 
@@ -68,97 +63,102 @@ char stemp[300];
 
 String dados;
 
-void setup() {
+
+void setup() 
+{
   SerialMonitor.begin(9600);
   gpsPort.begin(GPS_BAUD);
 
-  //Initialize DHT22
-  dht.begin();  // Initialize DHT22 sensor
+  //Inicializa o DHT22 (sensor de temperatura e umidade)
+  dht.begin(); 
 
-  //Initialize BMP280 sensor 
-  if (!bmp.begin (0x76)) {
-    Serial.println("Failed to find BMP280");
+  //Inicializa o BMP280 (sensor de pressão)
+  if (!bmp.begin (0x76)) 
+  {
+    Serial.println("Sensor BMP280 não encontrado!");
   }
 
-  //Initialize MPU6050
-  if (!mpu.begin(0x68)) {
-    Serial.println("Failed to find MPU6050 chip");
+  //Inicializa o GY-521 (giroscópio e acelerômetro)
+  if (!mpu.begin(0x68)) 
+  {
+    Serial.println("Sensor GY-521 não encontrado!");
   }
 
-  //SPI LoRa pins
+  //Seta os pinos SPI 
   SPI.begin(LORA_SCK,LORA_MISO,LORA_MOSI,LORA_SS);
 
-  // Initialize LoRa module
+  // Inicializa o rádio LoRa
   LoRa.setPins(LORA_SS, LORA_RST, LORA_DIO0);
-  if (!LoRa.begin(915E6)) {
-    Serial.println("LoRa initialization failed");
+  if (!LoRa.begin(915E6)) 
+  {
+    Serial.println("Falha ao inicializar o LoRa!");
     while (1);
   }
-  Serial.println("LoRa Initializing OK!");
+  
+  Serial.println("LoRa Inicializado!");
   delay(1000);
 }
 
-void loop() {
+void loop() 
+{
+  receberDadosDosSlaves(0); //Recebe os dados do suprimento de energia, que tem o endereço 0
 
-
-  receberDadosDosSlaves(0);
-
-  // OPT101 Values
+  // Valores do OP101
   float sensorValue = analogRead(sensorPin);
 
 
  //DHT22
 
-  float umidade = dht.readHumidity();           // Read humidity from DHT22
-  float temperaturaDHT = dht.readTemperature();  // Read temperature from DHT22
+  float umidade = dht.readHumidity();           // lê a umidade 
+  float temperaturaDHT = dht.readTemperature();  // lê a temperatura
 
   //BMP280
 
-  float pressao = bmp.readPressure() / 100; // Read pressure from BMP280
-  float altitude = bmp.readAltitude(1013.25); // Read altitude from BMP280
+  float pressao = bmp.readPressure() / 100; // lê a pressão
+  float altitude = bmp.readAltitude(1013.25); // lê a altitude
 
 
-  //MPU6050
+  //GY-521
 
   sensors_event_t a, g, temp;
   mpu.getEvent(&a, &g, &temp);
 
 
-  float accelX = a.acceleration.x; // Accel X
-  float accelY = a.acceleration.y; // Accel y
-  float accelZ = a.acceleration.z; // Accel z
+  float accelX = a.acceleration.x; // Acel X
+  float accelY = a.acceleration.y; // Acel y
+  float accelZ = a.acceleration.z; // Acel z
 
 
-  float gyroX = g.gyro.x; // Gyro x
-  float gyroY = g.gyro.y; // Gyro y
-  float gyroZ = g.gyro.z; // Gyro z
+  float gyroX = g.gyro.x; // Giro x
+  float gyroY = g.gyro.y; // Giro y
+  float gyroZ = g.gyro.z; // Giro z
 
 
   //GPS
   
-  float latitude = tinyGPS.location.lat();
-  float longitude = tinyGPS.location.lng();
-  float altitudeGPS = tinyGPS.altitude.meters();
-  int satellites = tinyGPS.satellites.value();
+  float latitude = tinyGPS.location.lat(); //latitude
+  float longitude = tinyGPS.location.lng(); //longitude
+  float altitudeGPS = tinyGPS.altitude.meters(); //altitude
+  int satellites = tinyGPS.satellites.value(); //número de satélites visíveis
 
   sprintf(stemp, "%.2f, %.2f, %.2f, %.2f, %.2f, %.2f, %.2f, %.2f, %.2f, %.2f, %d, %.6f, %.6f, %.2f, %d",
          temperaturaDHT, umidade, pressao, altitude,
          accelX, accelY, accelZ,
          gyroX, gyroY, gyroZ,
-         sensorValue, latitude, longitude, altitudeGPS, satellites);
+         sensorValue, latitude, longitude, altitudeGPS, satellites); //char com todos os dados do computador de bordo
 
-  enviarSensores();
+  enviarSensores(); //envia os dados do computador de bordo via LoRa
   
   delay(1500);
 
-  enviarDadosParaSlave("Dados para Suprimento de Energia", 0);
+  enviarDadosParaSlave("Dados para Suprimento de Energia", 0); //Envia mensagem para o suprimento de energia enviar seus dados (corrente, tensão e temperatura das baterias)
 
   delay(1500);
 }
 
-void printGPSInfo() {
-  // Print latitude, longitude, altitude in feet, course, speed, date, time,
-  // and the number of visible satellites.
+void printGPSInfo() 
+{
+  // Printa as informações do gps 
   SerialMonitor.println("GPS: ");
   SerialMonitor.print("Latitude: "); SerialMonitor.print(tinyGPS.location.lat(), 6);
   SerialMonitor.print(" Longitude: "); SerialMonitor.print(tinyGPS.location.lng(), 6);
@@ -171,22 +171,20 @@ void printGPSInfo() {
   SerialMonitor.println("==================================");
 }
 
-// This custom version of delay() ensures that the tinyGPS object
-// is being "fed". From the TinyGPS++ examples.
-static void smartDelay(unsigned long ms) {
+// Delay para o GPS sincronizar e receber informações.
+static void smartDelay(unsigned long ms) 
+{
   unsigned long start = millis();
   do {
-    // If data has come in from the GPS module
+    // Se o gps começar a mandar informações
     while (gpsPort.available())
-      tinyGPS.encode(gpsPort.read()); // Send it to the encode function
-    // tinyGPS.encode(char) continues to "load" the tinGPS object with new
-    // data coming in from the GPS module. As full NMEA strings begin to come in
-    // the tinyGPS library will be able to start parsing them for pertinent info
+      tinyGPS.encode(gpsPort.read()); 
   } while (millis() - start < ms);
 }
 
-// printDate() formats the date into dd/mm/yy.
-void printDate() {
+// printDate() formato da data dd/mm/aa.
+void printDate() 
+{
   SerialMonitor.print(tinyGPS.date.day());
   SerialMonitor.print("/");
   SerialMonitor.print(tinyGPS.date.month());
@@ -194,9 +192,9 @@ void printDate() {
   SerialMonitor.print(tinyGPS.date.year());
 }
 
-// printTime() formats the time into "hh:mm:ss", and prints leading 0's
-// where they're called for.
-void printTime() {
+// printTime() formato da hora "hh:mm:ss"
+void printTime() 
+{
   SerialMonitor.print(tinyGPS.time.hour());
   SerialMonitor.print(":");
   if (tinyGPS.time.minute() < 10) SerialMonitor.print('0');
@@ -206,8 +204,9 @@ void printTime() {
   SerialMonitor.print(tinyGPS.time.second());
 }
 
-String gatherGPSInfo() {
-  // Gather GPS information
+String gatherGPSInfo() 
+{
+  // Junta as informações do gps
   String gpsInfo = "Latitude: " + String(tinyGPS.location.lat(), 6) +
                    ", Longitude: " + String(tinyGPS.location.lng(), 6) +
                    ", Altitude: " + String(tinyGPS.altitude.meters()) +
@@ -218,13 +217,16 @@ String gatherGPSInfo() {
   return gpsInfo;
 }
 
-bool receberDadosDosSlaves(int endereco) {
-  if (Serial.available() > 0) {   
+bool receberDadosDosSlaves(int endereco) 
+{
+  if (Serial.available() > 0) 
+  {   
     String dadosRecebidos = Serial.readStringUntil('\n');
     int enderecoRecebido = dadosRecebidos.substring(0, 1).toInt();
     
     // Verifica o endereço de cada dispositivo e processe os dados recebidos de cada subsistema de acordo com o código deles
-    if (enderecoRecebido == endereco) {
+    if (enderecoRecebido == endereco) 
+    {
         String dados = dadosRecebidos.substring(2);
         enviarResposta(dados);
         comandoRecebido = true; //flag que define que um comando foi recebido
@@ -234,31 +236,34 @@ bool receberDadosDosSlaves(int endereco) {
   return comandoRecebido;
 }
 
-void processarDados(String nomeSlave, String dados) {
+void processarDados(String nomeSlave, String dados) 
+{
   Serial.println("Dados recebidos do " + nomeSlave + ": " + dados);
   
   enviarResposta(dados);
 }
 
-void enviarDadosParaSlave(String dados, int endereco) {
-
-  Serial.print(endereco);  // Printar no monitor serial
+void enviarDadosParaSlave(String dados, int endereco) 
+{
+  Serial.print(endereco);  
   Serial.print(":");
-  Serial.println(dados);
+  Serial.println(dados); // ex: "0:dados"
 }
 
-void enviarResposta(String resposta) { 
+void enviarResposta(String resposta) 
+{ 
   // Envia os dados recebidos dos outros subsistemas para a estação base
   LoRa.beginPacket();
-  LoRa.write(meuEndereco); // Envia o endereço do computador de bordo, para a leitura da estação base
+  LoRa.write(meuEndereco); // Envia o endereço único, para a leitura da estação base
   LoRa.print(resposta);
   LoRa.endPacket();
 }
 
-void enviarSensores() {
+void enviarSensores() 
+{
   // Envia os dados dos sensores da placa do computador de bordo para a estação base
   LoRa.beginPacket();
-  LoRa.write(meuEndereco); // Envia o endereço do computador de bordo, para a leitura da estação base
+  LoRa.write(meuEndereco); // Envia o endereço único, para a leitura da estação base
   LoRa.print(stemp);
   LoRa.endPacket();
   delay(1000);
