@@ -109,6 +109,7 @@ void loop()
 {
   receberDadosDosSlaves(0); //Recebe os dados do suprimento de energia, que tem o endereço 0
 
+  //LED Vermelho
   digitalWrite(LED_PIN, HIGH);
   
   // Valores do OP101
