@@ -49,6 +49,9 @@ Adafruit_MPU6050 mpu;
 
 const int sensorPin = 25;
 
+// LED colorímetro
+#define LED_PIN 39
+
 //Tempo 
 unsigned long tempoInicial;
 bool comandoRecebido = false;
@@ -68,6 +71,9 @@ void setup()
 {
   SerialMonitor.begin(9600);
   gpsPort.begin(GPS_BAUD);
+  
+  //LED Vermelho
+  pinMode(LED_PIN, OUTPUT);
 
   //Inicializa o DHT22 (sensor de temperatura e umidade)
   dht.begin(); 
@@ -103,6 +109,8 @@ void loop()
 {
   receberDadosDosSlaves(0); //Recebe os dados do suprimento de energia, que tem o endereço 0
 
+  digitalWrite(LED_PIN, HIGH);
+  
   // Valores do OP101
   float sensorValue = analogRead(sensorPin);
 
