@@ -62,7 +62,7 @@ int meuEndereco = 42;
 
 //Char para envio de dados dos sensores da placa de computador de bordo
 
-char stemp[300]; 
+char stemp[400]; 
 
 String dados;
 
