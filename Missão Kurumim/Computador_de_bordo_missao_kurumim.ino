@@ -75,6 +75,9 @@ void setup()
   //LED Vermelho
   pinMode(LED_PIN, OUTPUT);
 
+  //OPT101
+  pinMode(sensorPin, INPUT);
+
   //Inicializa o DHT22 (sensor de temperatura e umidade)
   dht.begin(); 
 
