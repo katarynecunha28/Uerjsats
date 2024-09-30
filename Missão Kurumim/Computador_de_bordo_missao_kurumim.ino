@@ -116,8 +116,7 @@ void loop()
   digitalWrite(LED_PIN, HIGH);
   
   // Valores do OP101
-  float sensorValue = analogRead(sensorPin);
-
+  int sensorValue = analogRead(sensorPin);
 
  //DHT22
 
