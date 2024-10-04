@@ -4,17 +4,17 @@
 #define DHTTYPE DHT22   // DHT 22  
 DHT dht(DHTPIN, DHTTYPE);
 
-#include <TinyGPS++.h>
-TinyGPSPlus tinyGPS; 
-
-#define GPS_BAUD 9600  // GPS baud rate 
-
+#include <TinyGPS.h>
 #include <SoftwareSerial.h>
-#define ARDUINO_GPS_RX 36// GPS TX, Arduino RX pin
-#define ARDUINO_GPS_TX 38 // GPS RX, Arduino TX pin
-SoftwareSerial ssGPS(ARDUINO_GPS_TX, ARDUINO_GPS_RX); // Cria a SoftwareSerial
 
-#define gpsPort ssGPS //GPS
+//GPS 
+#define GPS_RX 36
+#define GPS_TX 38
+#define GPS_Serial_Baud 9600
+
+TinyGPS gps;
+
+SoftwareSerial gpsSerial(GPS_RX, GPS_TX);
 
 #define SerialMonitor Serial
 
@@ -67,7 +67,9 @@ String dados;
 void setup() 
 {
   SerialMonitor.begin(9600);
-  gpsPort.begin(GPS_BAUD);
+  
+  //GPS
+  gpsSerial.begin(GPS_Serial_Baud);
 
   //OPT101
   pinMode(sensorPin, INPUT);
@@ -136,18 +138,45 @@ void loop()
   float gyroZ = g.gyro.z; // Giro z
 
 
-  //GPS
+  // Atualiza as informações do GPS
   
-  float latitude = tinyGPS.location.lat(); //latitude
-  float longitude = tinyGPS.location.lng(); //longitude
-  float altitudeGPS = tinyGPS.altitude.meters(); //altitude
-  int satellites = tinyGPS.satellites.value(); //número de satélites visíveis
+    bool newData = false;
+    unsigned long chars;
+  // For one second we parse GPS data and report some key values
+  for (unsigned long start = millis(); millis() - start < 1000;)
+  {
+    while (gpsSerial.available())
+    {
+      char c = gpsSerial.read();
+      // Serial.write(c); //apague o comentario para mostrar os dados crus
+      if (gps.encode(c)) // Atribui true para newData caso novos dados sejam recebidos
+        newData = true;
+    }
+  }
+  if (newData)
+  {
+    float flat, flon;
+    unsigned long age;
+    gps.f_get_position(&flat, &flon, &age);
+    float latitude = flat == TinyGPS::GPS_INVALID_F_ANGLE ? 0.0 : flat; //float latitude
+    float longitude = flon == TinyGPS::GPS_INVALID_F_ANGLE ? 0.0 : flon; //float longitude
+    int sats = gps.satellites() == TinyGPS::GPS_INVALID_SATELLITES ? 0 : gps.satellites(); //int número de satélites
+    
 
-  sprintf(stemp, "%.2f, %.2f, %.2f, %.2f, %.2f, %.2f, %.2f, %.2f, %.2f, %.2f, %d, %.6f, %.6f, %.2f, %d",
-         temperaturaDHT, umidade, pressao, altitude,
-         accelX, accelY, accelZ,
-         gyroX, gyroY, gyroZ,
-         sensorValue, latitude, longitude, altitudeGPS, satellites); //char com todos os dados do computador de bordo
+     sprintf(stemp, "%.2f, %.2f, %.2f, %.2f, %.2f, %.2f, %.2f, %.2f, %.2f, %.2f, %d, %.6f, %.6f, %d",
+                temperaturaDHT, umidade, pressao, altitude,
+                accelX, accelY, accelZ,
+                gyroX, gyroY, gyroZ,
+                sensorValue, latitude, longitude, sats); //char com todos os dados do computador de bordo com os dados do GPS
+  }
+  else
+  {
+     sprintf(stemp, "%.2f, %.2f, %.2f, %.2f, %.2f, %.2f, %.2f, %.2f, %.2f, %.2f, %d",
+            temperaturaDHT, umidade, pressao, altitude,
+            accelX, accelY, accelZ,
+            gyroX, gyroY, gyroZ,
+            sensorValue); //char com todos os dados do computador de bordo sem o GPS, caso ele falhe
+  }
 
   enviarSensores(); //envia os dados do computador de bordo via LoRa
   
@@ -156,67 +185,6 @@ void loop()
   enviarDadosParaSlave("Dados para Suprimento de Energia", 0); //Envia mensagem para o suprimento de energia enviar seus dados (corrente, tensão e temperatura das baterias)
 
   delay(1500);
-}
-
-void printGPSInfo() 
-{
-  // Printa as informações do gps 
-  SerialMonitor.println("GPS: ");
-  SerialMonitor.print("Latitude: "); SerialMonitor.print(tinyGPS.location.lat(), 6);
-  SerialMonitor.print(" Longitude: "); SerialMonitor.print(tinyGPS.location.lng(), 6);
-  SerialMonitor.print(" Altitude: "); SerialMonitor.print(tinyGPS.altitude.meters());
-  SerialMonitor.print(" Course: "); SerialMonitor.print(tinyGPS.course.deg());
-  SerialMonitor.print(" Speed: "); SerialMonitor.print(tinyGPS.speed.mps());
-  SerialMonitor.print(" Date: "); printDate();
-  SerialMonitor.print(" Time: "); printTime();
-  SerialMonitor.print(" Sats: "); SerialMonitor.println(tinyGPS.satellites.value());
-  SerialMonitor.println("==================================");
-}
-
-// Delay para o GPS sincronizar e receber informações.
-static void smartDelay(unsigned long ms) 
-{
-  unsigned long start = millis();
-  do {
-    // Se o gps começar a mandar informações
-    while (gpsPort.available())
-      tinyGPS.encode(gpsPort.read()); 
-  } while (millis() - start < ms);
-}
-
-// printDate() formato da data dd/mm/aa.
-void printDate() 
-{
-  SerialMonitor.print(tinyGPS.date.day());
-  SerialMonitor.print("/");
-  SerialMonitor.print(tinyGPS.date.month());
-  SerialMonitor.print("/");
-  SerialMonitor.print(tinyGPS.date.year());
-}
-
-// printTime() formato da hora "hh:mm:ss"
-void printTime() 
-{
-  SerialMonitor.print(tinyGPS.time.hour());
-  SerialMonitor.print(":");
-  if (tinyGPS.time.minute() < 10) SerialMonitor.print('0');
-  SerialMonitor.print(tinyGPS.time.minute());
-  SerialMonitor.print(":");
-  if (tinyGPS.time.second() < 10) SerialMonitor.print('0');
-  SerialMonitor.print(tinyGPS.time.second());
-}
-
-String gatherGPSInfo() 
-{
-  // Junta as informações do gps
-  String gpsInfo = "Latitude: " + String(tinyGPS.location.lat(), 6) +
-                   ", Longitude: " + String(tinyGPS.location.lng(), 6) +
-                   ", Altitude: " + String(tinyGPS.altitude.meters()) +
-                   ", Course: " + String(tinyGPS.course.deg()) +
-                   ", Speed: " + String(tinyGPS.speed.mps()) +
-                   ", Satellites: " + String(tinyGPS.satellites.value());
-
-  return gpsInfo;
 }
 
 bool receberDadosDosSlaves(int endereco) 
@@ -236,13 +204,6 @@ bool receberDadosDosSlaves(int endereco)
     }
   }
   return comandoRecebido;
-}
-
-void processarDados(String nomeSlave, String dados) 
-{
-  Serial.println("Dados recebidos do " + nomeSlave + ": " + dados);
-  
-  enviarResposta(dados);
 }
 
 void enviarDadosParaSlave(String dados, int endereco) 
