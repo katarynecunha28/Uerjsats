@@ -1,13 +1,16 @@
 #include "DHT.h"
-
-#define DHTPIN 12  
-#define DHTTYPE DHT22   // DHT 22  
-DHT dht(DHTPIN, DHTTYPE);
-
-//LoRa 
 #include <SPI.h>
 #include <LoRa.h>
+#include <Wire.h>
+#include <Adafruit_GFX.h>
+#include <Adafruit_SSD1306.h>
 
+// Configurações do DHT22
+#define DHTPIN 12
+#define DHTTYPE DHT22
+DHT dht(DHTPIN, DHTTYPE);
+
+// Configurações LoRa
 #define LORA_SCK 5
 #define LORA_MISO 19
 #define LORA_MOSI 27
@@ -15,65 +18,96 @@ DHT dht(DHTPIN, DHTTYPE);
 #define LORA_RST 14
 #define LORA_DIO0 26
 
-// Endereço único do rádio
-int meuEndereco = 42;  
+int meuEndereco = 42;
+char stemp[400];
+int contadorPacotes = 0;
 
-// Char para envio de dados dos sensores da placa de computador de bordo
-char stemp[400]; 
+// OLED pins
+#define OLED_SDA 4
+#define OLED_SCL 15 
+#define OLED_RST 16
+#define SCREEN_WIDTH 128
+#define SCREEN_HEIGHT 64
 
-// Contador de pacotes enviados
-int contadorPacotes = 0; 
+Adafruit_SSD1306 display(SCREEN_WIDTH, SCREEN_HEIGHT, &Wire, OLED_RST);
 
-void setup() 
+// Setup
+void setup()
 {
   Serial.begin(9600);
 
-  // Inicializa o DHT22 (sensor de temperatura e umidade)
-  dht.begin(); 
+  pinMode(OLED_RST, OUTPUT);
+  digitalWrite(OLED_RST, LOW);
+  delay(20);
+  digitalWrite(OLED_RST, HIGH);
+  
+  Wire.begin(OLED_SDA, OLED_SCL);
+  if (!display.begin(SSD1306_SWITCHCAPVCC, 0x3c, false, false)) {
+    Serial.println(F("SSD1306 allocation failed"));
+    for (;;);
+  }
 
-  // Seta os pinos SPI 
+  display.clearDisplay();
+  display.setTextColor(WHITE);
+  display.setTextSize(1);
+  display.setCursor(0, 0);
+  display.print("LORA SENDER ");
+  display.display();
+
+  // Inicializa o DHT22
+  dht.begin();
+
+  // Inicializa o LoRa
   SPI.begin(LORA_SCK, LORA_MISO, LORA_MOSI, LORA_SS);
-
-  // Inicializa o rádio LoRa
   LoRa.setPins(LORA_SS, LORA_RST, LORA_DIO0);
-  if (!LoRa.begin(915E6)) 
+  if (!LoRa.begin(908E6))
   {
     Serial.println("Falha ao inicializar o LoRa!");
     while (1);
   }
-  
+
   Serial.println("LoRa Inicializado!");
   delay(1000);
 }
 
-void loop() 
+// Loop principal
+void loop()
 {
-  // DHT22
-  float umidade = dht.readHumidity();           // lê a umidade 
-  float temperaturaDHT = dht.readTemperature(); // lê a temperatura
+  // Lê os valores do sensor DHT22
+  float umidade = dht.readHumidity();
+  float temperaturaDHT = dht.readTemperature();
 
-  // Cria o pacote com temperatura, umidade e contador
-  sprintf(stemp, "%.2f, %.2f, Pacote: %d", temperaturaDHT, umidade, contadorPacotes); 
+  // Cria a mensagem com os dados
+  sprintf(stemp, "%.2f, %.2f, Pacote: %d", temperaturaDHT, umidade, contadorPacotes);
 
-  enviarSensores(); // Envia os dados do computador de bordo via LoRa
+  // Envia os dados via LoRa
+  enviarSensores();
   
+  // Atualize o display com o comando enviado
+  display.clearDisplay();
+  display.setCursor(0, 20);
+  display.print("Enviando msg: ");
+  display.setCursor(0, 30);
+  display.print(stemp);
+  display.display();
+
+
   delay(1500);
 }
 
-void enviarSensores() 
+// Função para enviar dados via LoRa
+void enviarSensores()
 {
-  // Envia os dados dos sensores da placa do computador de bordo para a estação base
   LoRa.beginPacket();
-  LoRa.write(meuEndereco); // Envia o endereço único para identificação
-  LoRa.print(stemp);       // Envia a mensagem com os dados e o contador de pacotes
+  LoRa.write(meuEndereco);
+  LoRa.print(stemp);
   LoRa.endPacket();
 
-  // Incrementa o contador de pacotes
   contadorPacotes++;
 
-  // Imprime os dados enviados no Serial Monitor
   Serial.print("Mensagem enviada via LoRa: ");
   Serial.println(stemp);
 
   delay(1000);
 }
+
