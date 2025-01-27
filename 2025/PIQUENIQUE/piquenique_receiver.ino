@@ -3,7 +3,7 @@
 #include "HT_SSD1306Wire.h"
 
 // Configurações do LoRa
-#define RF_FREQUENCY           915000000 // Frequência em Hz (915 MHz)
+#define RF_FREQUENCY           908000000 // Frequência em Hz (915 MHz)
 #define LORA_BANDWIDTH         0         // [0: 125 kHz]
 #define LORA_SPREADING_FACTOR  7         // [SF7..SF12]
 #define LORA_CODINGRATE        1         // [1: 4/5]
@@ -63,12 +63,14 @@ void OnRxDone(uint8_t *payload, uint16_t size, int16_t rssi, int8_t snr) {
         Serial.printf("Mensagem: %s\n", (char*)&payload[1]); // Ignora o primeiro byte (endereço)
         Serial.printf("RSSI: %d dBm, Tamanho: %d bytes\n", Rssi, rxSize);
 
+        String displayMessage = "RSSI: " + String(Rssi) + " dBm \n Tamanho: " + String(rxSize) + " bytes";
+
         // Exibe os dados no display OLED
         factory_display.clear();
-        factory_display.drawString(0, 0, "Pacote Recebido:");
-        factory_display.drawString(0, 10, "Endereco: 42");
-        factory_display.drawString(0, 20, "Mensagem:");
+        factory_display.drawString(0, 0, "Teste de Telemetria 01");
+        factory_display.drawString(0, 10, "Mensagem:");
         factory_display.drawString(0, 30, String((char*)&payload[1]));
+        factory_display.drawString(0, 40, displayMessage);
         factory_display.display();
     } else {
         // Ignora pacotes de outros endereços
