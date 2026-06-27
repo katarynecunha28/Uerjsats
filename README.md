@@ -4,7 +4,7 @@
 ![Instituição](https://img.shields.io/badge/UERJ-Sats-blue)
 ![Mantenedor](https://img.shields.io/badge/Mantenedor-katarynecunha28-purple)
 
-Este repositório centraliza, organiza e preserva o histórico de códigos de voo, firmwares, algoritmos de sensores e ferramentas legadas desenvolvidos para as missões da **UERJ Sats** durante os ciclos de **2023** e **2024**.
+Este repositório centraliza, organiza e preserva o histórico de códigos de voo, firmwares, algoritmos de sensores e ferramentas legadas desenvolvidos para as missões da **UERJ Sats** durante os ciclos de **2023** a **2025**.
 
 O objetivo deste espaço é servir como uma base de consulta técnica e preservação do conhecimento das primeiras missões para as novas gerações de membros da equipe.
 
