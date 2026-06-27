@@ -1,4 +1,4 @@
-# UERJ Sats - Repositório de Códigos Históricos (2023 - 2024)
+# UERJ Sats - Repositório de Códigos Históricos (2023 - 2025)
 
 ![Status](https://img.shields.io/badge/Status-Arquivo%20%2F%20Hist%C3%B3rico-lightgrey)
 ![Instituição](https://img.shields.io/badge/UERJ-Sats-blue)
